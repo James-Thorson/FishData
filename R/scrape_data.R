@@ -1,0 +1,59 @@
+
+#' Compile and harmonize fish survey data
+#'
+#' \code{scrape_data} queries and harmonizes fish survey data from public databases
+#'
+#' @param region name of region to be queried (currently only "Eastern_Bering_Sea")
+#' @param species_set either a character vector (giving scientific names of species) or a integer (giving number of most-frequently sighted species) to be queried
+
+#' @return A data frame with survey data
+
+#' @export
+scrape_data = function( region="Eastern_Bering_Sea", species_set=10 ){
+
+  # Start
+  DF = NULL
+
+  # Eastern Bering Sea
+  # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
+  if( region=="Eastern_Bering_Sea" ){
+    # data to save
+    EBS_data = NULL
+
+    # Names of pieces
+    files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2015")
+
+    # Loop through download pieces
+    for(i in 1:length(files)){
+      # Download and unzip
+      temp <- tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
+      download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ebs",files[i],".zip"),temp)
+      data <- read.csv( unz(temp, paste0("ebs",files[i],".csv")) )
+      unlink(temp)
+      # Append
+      EBS_data = rbind( EBS_data, data )
+    }
+
+    # Add TowID
+    Data = cbind( EBS_data, "TowID"=paste0(EBS_data[,'YEAR'],"_",EBS_data[,'STATION'],"_",EBS_data[,'HAUL']) )
+    # Harmonize column names
+    Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
+    # Exclude missing species
+    Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
+
+    # Determine species_set
+    if( is.numeric(species_set) ){
+      Num_occur = tapply( ifelse(Data[,'Wt']>0,1,0), INDEX=Data[,'Sci'], FUN=sum)
+      species_set = names(sort(Num_occur, decreasing=TRUE)[1:species_set])
+    }
+
+    # Add zeros
+    DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast")
+  }
+
+  # Return stuff
+  if( is.null(DF) ) stop("region didn't match options, please check code")
+  return(DF)
+}
+
+
