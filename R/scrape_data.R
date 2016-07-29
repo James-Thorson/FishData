@@ -51,6 +51,43 @@ scrape_data = function( region="Eastern_Bering_Sea", species_set=10 ){
     DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast")
   }
 
+  # Eastern Bering Sea
+  # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
+  if( region=="Gulf_of_Alaska" ){
+    # data to save
+    GOA_data = NULL
+
+    # Names of pieces
+    files = c("1984_1987","1990_1999","2001_2005","2007_2013","2015")
+
+    # Loop through download pieces
+    for(i in 1:length(files)){
+      # Download and unzip
+      temp <- tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
+      download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/goa",files[i],".zip"),temp)
+      data <- read.csv( unz(temp, paste0("goa",files[i],".csv")) )
+      unlink(temp)
+      # Append
+      GOA_data = rbind( GOA_data, data )
+    }
+
+    # Add TowID
+    Data = cbind( GOA_data, "TowID"=paste0(GOA_data[,'YEAR'],"_",GOA_data[,'STATION'],"_",GOA_data[,'HAUL']) )
+    # Harmonize column names
+    Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
+    # Exclude missing species
+    Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
+
+    # Determine species_set
+    if( is.numeric(species_set) ){
+      Num_occur = tapply( ifelse(Data[,'Wt']>0,1,0), INDEX=Data[,'Sci'], FUN=sum)
+      species_set = names(sort(Num_occur, decreasing=TRUE)[1:species_set])
+    }
+
+    # Add zeros
+    DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast")
+  }
+
   # Return stuff
   if( is.null(DF) ) stop("region didn't match options, please check code")
   return(DF)
