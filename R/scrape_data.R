@@ -9,7 +9,7 @@
 #' @return A data frame with survey data
 
 #' @export
-scrape_data = function( region="Eastern_Bering_Sea", species_set=10 ){
+scrape_data = function( region="Eastern_Bering_Sea", species_set=10, error_tol=1e-12 ){
 
   # Start
   DF = NULL
@@ -48,7 +48,7 @@ scrape_data = function( region="Eastern_Bering_Sea", species_set=10 ){
     }
 
     # Add zeros
-    DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast")
+    DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", error_tol=error_tol)
   }
 
   # Eastern Bering Sea
@@ -85,7 +85,44 @@ scrape_data = function( region="Eastern_Bering_Sea", species_set=10 ){
     }
 
     # Add zeros
-    DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast")
+    DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", error_tol=error_tol)
+  }
+
+  # Eastern Bering Sea
+  # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
+  if( region=="Aleutian_Islands" ){
+    # data to save
+    AI_data = NULL
+
+    # Names of pieces
+    files = c("1983_2000","2002_2012","2014")
+
+    # Loop through download pieces
+    for(i in 1:length(files)){
+      # Download and unzip
+      temp <- tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
+      download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ai",files[i],".zip"),temp)
+      data <- read.csv( unz(temp, paste0("ai",files[i],".csv")) )
+      unlink(temp)
+      # Append
+      AI_data = rbind( AI_data, data )
+    }
+
+    # Add TowID
+    Data = cbind( AI_data, "TowID"=paste0(AI_data[,'YEAR'],"_",AI_data[,'STATION'],"_",AI_data[,'HAUL']) )
+    # Harmonize column names
+    Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
+    # Exclude missing species
+    Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
+
+    # Determine species_set
+    if( is.numeric(species_set) ){
+      Num_occur = tapply( ifelse(Data[,'Wt']>0,1,0), INDEX=Data[,'Sci'], FUN=sum)
+      species_set = names(sort(Num_occur, decreasing=TRUE)[1:species_set])
+    }
+
+    # Add zeros
+    DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", error_tol=error_tol)
   }
 
   # Return stuff
