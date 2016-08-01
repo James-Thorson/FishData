@@ -4,12 +4,17 @@
 \alias{scrape_data}
 \title{Compile and harmonize fish survey data}
 \usage{
-scrape_data(region = "Eastern_Bering_Sea", species_set = 10)
+scrape_data(region = "Eastern_Bering_Sea", species_set = 10,
+  error_tol = 1e-12, localdir = NULL)
 }
 \arguments{
 \item{region}{name of region to be queried (currently only "Eastern_Bering_Sea")}
 
 \item{species_set}{either a character vector (giving scientific names of species) or a integer (giving number of most-frequently sighted species) to be queried}
+
+\item{error_tol}{tolerance for errors when error-checking the algorithm for adding zeros}
+
+\item{localdir}{local directory to save and load data from regional databases (to potentially avoid download times or problems without internet access)}
 }
 \value{
 A data frame with survey data

@@ -9,6 +9,8 @@ Description: Compiles and harmonizes survey data for fish
   populations globally
 Depends:
     R (>= 3.1.0),
-    devtools
+Imports: 
+    devtools,
+    jsonlite
 License: GPL-2
 RoxygenNote: 5.0.1
