@@ -27,7 +27,25 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
     message("Options include:  'Eastern_Bering_Sea', 'Gulf of Alaska', 'Aleutian_Islands', 'West_coast_groundfish_bottom_trawl_survey', 'West_coast_groundfish_hook_and_line'")
     return( invisible(NULL) )
   }else{
-    message("downloading ",survey," survey...")
+    message("Obtaining data for ",survey," survey...")
+  }
+
+  ########################
+  # Local functions
+  ########################
+
+  load_or_save = function( Downloaded_data, localdir, name ){
+    # Load if locally available
+    if( !is.null(localdir) & file.exists(paste0(localdir,"/",name,".RData")) ){
+      load( file=paste0(localdir,"/",name,".RData") )
+      message("Loading all data from local directory")
+    }
+    # Save if not locally available
+    if( !is.null(localdir) & !file.exists(paste0(localdir,"/",name,".RData")) ){
+      save( Downloaded_data, file=paste0(localdir,"/",name,".RData") )
+      message("Saving downloaded data to local directory")
+    }
+    return( Downloaded_data )
   }
 
   ########################
@@ -37,64 +55,48 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
   # West Coast groundfish bottom trawl survey
   # https://www.nwfsc.noaa.gov/data/
   if( survey=="WCGBTS" ){
-    # data to save
-    WCGBTS_data = NULL
-
     # Names of pieces
     files = 2003:2015
     Vars = c("operation_dim$operation_id", "field_identified_taxonomy_dim$scientific_name", "date_dim$year", "haul_latitude_dim$latitude_in_degrees", "haul_longitude_dim$longitude_in_degrees", "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der", "operation_dim$vessel_id", "operation_dim$project_name" )
 
     # Loop through download pieces
-    if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGTBS_data.RData")) ){
+    Downloaded_data = NULL
+    if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGBTS_download.RData")) ){
       for(i in 1:length(files)){
         # Download and unzip
         Url_text = paste0("https://www.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=operation_dim$project_name=Groundfish%20Slope%20and%20Shelf%20Combination%20Survey,date_dim$year=",files[i],"&variables=",paste0(Vars,collapse=","))
-        message("Downloading all WCGBTS catch-rate data from ",files[i]," from NWFSC server")
-        data = jsonlite::fromJSON( Url_text )
+        message("Downloading all WCGBTS catch-rate data for ",files[i]," from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
+        Data_tmp = jsonlite::fromJSON( Url_text )
         # Append
-        WCGBTS_data = rbind( WCGBTS_data, data )
+        Downloaded_data = rbind( Downloaded_data, Data_tmp )
       }
     }
-    # Load if locally available
-    if( !is.null(localdir) & file.exists(paste0(localdir,"/WCGTBS_data.RData")) ){
-      load( file=paste0(localdir,"/WCGTBS_data.RData") )
-    }
-    # Save if not locally available
-    if( !is.null(localdir) & !file.exists(paste0(localdir,"/WCGTBS_data.RData")) ){
-      save( WCGBTS_data, file=paste0(localdir,"/WCGTBS_data.RData") )
-    }
+    # Load if locally available, and save if not
+    Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGBTS_download")
 
     # Harmonize column names
-    Data = ThorsonUtilities::rename_columns( WCGBTS_data, newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Proj","Vessel"))
+    Data = ThorsonUtilities::rename_columns( Downloaded_data, newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Proj","Vessel"))
   }
 
   # West Coast groundfish hook and line survey
   # https://www.nwfsc.noaa.gov/data/
   if( survey=="WCGHL" ){
-    # data to save
-    WCGHL_data = NULL
-
     # Names of pieces
     Vars = c("operation_type", "best_available_taxonomy_dim$scientific_name", "date_dim$yyyymmdd", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
 
     # Download data
-    if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGHL_data.RData")) ){
+    Downloaded_data = NULL
+    if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGHL_download.RData")) ){
       # Download and unzip
       Url_text = paste0("https://www.nwfsc.noaa.gov/data/api/v1/source/hooknline.catch_hooknline_view/selection.json?variables=",paste0(Vars,collapse=","))
-      message("Downloading all WCGHL catch-rate data from NWFSC server")
-      WCGHL_data = jsonlite::fromJSON( Url_text )
+      message("Downloading all WCGHL catch-rate data from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
+      Downloaded_data = jsonlite::fromJSON( Url_text )
     }
-    # Load if locally available
-    if( !is.null(localdir) & file.exists(paste0(localdir,"/WCGHL_data.RData")) ){
-      load( file=paste0(localdir,"/WCGHL_data.RData") )
-    }
-    # Save if not locally available
-    if( !is.null(localdir) & !file.exists(paste0(localdir,"/WCGHL_data.RData")) ){
-      save( WCGHL_data, file=paste0(localdir,"/WCGHL_data.RData") )
-    }
+    # Load if locally available, and save if not
+    Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGHL_download")
 
     # Add HaulID
-    WCGHL_data = cbind( WCGHL_data, "TowID"=paste(WCGHL_data[,'date_dim$yyyymmdd'],WCGHL_data[,'site_dim$site_latitude_dd'],WCGHL_data[,'site_dim$site_longitude_dd'],sep="_") )
+    WCGHL_data = cbind( Downloaded_data, "TowID"=paste(Downloaded_data[,'date_dim$yyyymmdd'],Downloaded_data[,'site_dim$site_latitude_dd'],Downloaded_data[,'site_dim$site_longitude_dd'],sep="_") )
 
     # Calculate effort measure
     WCGHL_data = cbind( WCGHL_data, "soak_time"=WCGHL_data[,'sampling_end_time_dim$military_hour']*60+WCGHL_data[,'sampling_end_time_dim$minute']-(WCGHL_data[,'sampling_start_time_dim$military_hour']*60+WCGHL_data[,'sampling_start_time_dim$minute']))
@@ -107,111 +109,87 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
   # Eastern Bering Sea
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="EBSBTS" ){
-    # data to save
-    EBS_data = NULL
-
     # Names of pieces
     files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2015")
 
     # Loop through download pieces
-    if( is.null(localdir) | !file.exists(paste0(localdir,"/EBS_data.RData")) ){
+    Downloaded_data = NULL
+    if( is.null(localdir) | !file.exists(paste0(localdir,"/EBSBTS_download.RData")) ){
       for(i in 1:length(files)){
         # Download and unzip
         temp <- tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
         download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ebs",files[i],".zip"),temp)
-        data <- read.csv( unz(temp, paste0("ebs",files[i],".csv")) )
+        Data_tmp <- read.csv( unz(temp, paste0("ebs",files[i],".csv")) )
         unlink(temp)
         # Append
-        EBS_data = rbind( EBS_data, data )
+        Downloaded_data = rbind( Downloaded_data, Data_tmp )
       }
     }
-    # Load if locally available
-    if( !is.null(localdir) & file.exists(paste0(localdir,"/EBS_data.RData")) ){
-      load( file=paste0(localdir,"/EBS_data.RData") )
-    }
-    # Save if not locally available
-    if( !is.null(localdir) & !file.exists(paste0(localdir,"/EBS_data.RData")) ){
-      save( EBS_data, file=paste0(localdir,"/EBS_data.RData") )
-    }
+    # Load if locally available, and save if not
+    Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="EBSBTS_download")
 
     # Add TowID
-    Data = cbind( EBS_data, "TowID"=paste0(EBS_data[,'YEAR'],"_",EBS_data[,'STATION'],"_",EBS_data[,'HAUL']) )
+    Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
     # Harmonize column names
     Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
 
-  # Eastern Bering Sea
+  # Gulf of Alaska
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="GOABTS" ){
-    # data to save
-    GOA_data = NULL
-
     # Names of pieces
     files = c("1984_1987","1990_1999","2001_2005","2007_2013","2015")
 
     # Loop through download pieces
-    if( is.null(localdir) | !file.exists(paste0(localdir,"/GOA_data.RData")) ){
+    Downloaded_data = NULL
+    if( is.null(localdir) | !file.exists(paste0(localdir,"/GOA_download.RData")) ){
       for(i in 1:length(files)){
         # Download and unzip
         temp <- tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
         download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/goa",files[i],".zip"),temp)
-        data <- read.csv( unz(temp, paste0("goa",files[i],".csv")) )
+        Data_tmp <- read.csv( unz(temp, paste0("goa",files[i],".csv")) )
         unlink(temp)
         # Append
-        GOA_data = rbind( GOA_data, data )
+        Downloaded_data = rbind( Downloaded_data, Data_tmp )
       }
     }
-    # Load if locally available
-    if( !is.null(localdir) & file.exists(paste0(localdir,"/GOA_data.RData")) ){
-      load( file=paste0(localdir,"/GOA_data.RData") )
-    }
-    # Save if not locally available
-    if( !is.null(localdir) & !file.exists(paste0(localdir,"/GOA_data.RData")) ){
-      save( GOA_data, file=paste0(localdir,"/GOA_data.RData") )
-    }
+    # Load if locally available, and save if not
+    Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="GOA_download")
 
     # Add TowID
-    Data = cbind( GOA_data, "TowID"=paste0(GOA_data[,'YEAR'],"_",GOA_data[,'STATION'],"_",GOA_data[,'HAUL']) )
+    Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
     # Harmonize column names
     Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
 
-  # Eastern Bering Sea
+  # Aleutian Islands
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="AIBTS" ){
-    # data to save
-    AI_data = NULL
-
     # Names of pieces
     files = c("1983_2000","2002_2012","2014")
 
     # Loop through download pieces
-    if( is.null(localdir) | !file.exists(paste0(localdir,"/AI_data.RData")) ){
+    Downloaded_data = NULL
+    if( is.null(localdir) | !file.exists(paste0(localdir,"/AI_download.RData")) ){
       for(i in 1:length(files)){
         # Download and unzip
         temp <- tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
         download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ai",files[i],".zip"),temp)
-        data <- read.csv( unz(temp, paste0("ai",files[i],".csv")) )
+        Data_tmp <- read.csv( unz(temp, paste0("ai",files[i],".csv")) )
         unlink(temp)
         # Append
-        AI_data = rbind( AI_data, data )
+        Downloaded_data = rbind( Downloaded_data, Data_tmp )
       }
     }
-    # Load if locally available
-    if( !is.null(localdir) & file.exists(paste0(localdir,"/AI_data.RData")) ){
-      load( file=paste0(localdir,"/AI_data.RData") )
-    }
-    # Save if not locally available
-    if( !is.null(localdir) & !file.exists(paste0(localdir,"/AI_data.RData")) ){
-      save( AI_data, file=paste0(localdir,"/AI_data.RData") )
-    }
+    # Load if locally available, and save if not
+    Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="AI_download")
 
     # Add TowID
-    Data = cbind( AI_data, "TowID"=paste0(AI_data[,'YEAR'],"_",AI_data[,'STATION'],"_",AI_data[,'HAUL']) )
+    Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
     # Harmonize column names
     Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
     # Exclude missing species
@@ -235,8 +213,8 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
   if( survey %in% c("WCGBTS", "WCGHL", "EBSBTS", "GOABTS", "AIBTS") ){
     # data_frame=Data; unique_sample_ID_colname="TowID"; sample_colname="Wt"; species_subset=species_set; species_colname="Sci"; Method="Fast"
     # if_multiple_records="Combine"; verbose=TRUE; na.rm=FALSE; save_name=NULL
-    DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
-  }      # FishData::
+    DF = FishData::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
+  }
 
   return(DF)
 }

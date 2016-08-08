@@ -20,6 +20,11 @@
 #' @export
 add_missing_zeros = function( data_frame, unique_sample_ID_colname, sample_colname, species_subset=NULL, species_colname, Method="Slow", if_multiple_records="Error", verbose=TRUE, na.rm=FALSE, save_name=NULL, error_tol=1e-12 ){
 
+  # Pre-processing
+  if( !is.factor(data_frame[,unique_sample_ID_colname]) ){
+    data_frame[,unique_sample_ID_colname] = factor(data_frame[,unique_sample_ID_colname])
+  }
+
   # Load previous results if possible
   if( !is.null(save_name) && file.exists(save_name) ){
     load(file=save_name)
@@ -78,6 +83,7 @@ add_missing_zeros = function( data_frame, unique_sample_ID_colname, sample_colna
         temp_data_frame[,species_colname] = species_set[p]
         # extract data for species p from input data frame
         species_data_frame = data_frame[ which(data_frame[,species_colname]==species_set[p]), ]
+        # Combine across observations according to 'if_multiple_records'
         if( if_multiple_records=="First"){
           # Take first matching record for a given species and TowID
           Match = match( species_data_frame[,unique_sample_ID_colname], temp_data_frame[,unique_sample_ID_colname] )
