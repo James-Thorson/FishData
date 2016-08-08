@@ -4,21 +4,29 @@
 #' \code{survey_catch_rates} queries and harmonizes fish survey data from public databases
 #'
 #' @param survey name of survey to be queried
+#' @param add_zeros Boolean, whether to add zeros for species in samples that were conducted but where the species was not encountered (recommended: TRUE)
 #' @param species_set either a character vector (giving scientific names of species) or a integer (giving number of most-frequently sighted species) to be queried
 #' @param error_tol tolerance for errors when error-checking the algorithm for adding zeros
 #' @param localdir local directory to save and load data from regional databases (to potentially avoid download times or problems without internet access)
 
-#' @return A data frame with survey data
+#' @return A data frame of survey data with the following columns
+#' \describe{
+#'   \item{Sci}{Scientific name}
+#'   \item{Year}{Calendar year}
+#'   \item{TowID}{UniqueID associated with each sampling occasion}
+#'   \item{Lat}{Latitude}
+#'   \item{Long}{Longitude}
+#'   \item{Wt}{Catch in KG (may be standardized by effort, check survey for details)}
+#'   \item{Num}{Catch in numbers (may be standardized by effort, check survey for details)}
+#'   \item{...}{Potentially other column labels}
+#' }
 
 #' @export
-survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, error_tol=1e-12, localdir=NULL ){
+survey_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, species_set=10, error_tol=1e-12, localdir=NULL ){
 
   ########################
   # Initial book-keeping
   ########################
-
-  # Start
-  DF = NULL
 
   # Match survey
   survey = switch( survey, "Eastern_Bering_Sea"="EBSBTS", "EBS"="EBSBTS", "EBSBTS"="EBSBTS", "West_coast_groundfish_bottom_trawl_survey"="WCGBTS", "WCGBTS"="WCGBTS", "West_coast_groundfish_hook_and_line"="WCGHL", "WCGHL"="WCGHL", "GOABTS"="GOABTS", "GOA"="GOABTS", "Gulf_of_Alaska"="GOABTS", "Aleutian_Islands"="AIBTS", "AIBTS"="AIBTS", NA)
@@ -34,6 +42,7 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
   # Local functions
   ########################
 
+  # Loads or saves data locally if localdir is provided
   load_or_save = function( Downloaded_data, localdir, name ){
     # Load if locally available
     if( !is.null(localdir) & file.exists(paste0(localdir,"/",name,".RData")) ){
@@ -46,6 +55,16 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
       message("Saving downloaded data to local directory")
     }
     return( Downloaded_data )
+  }
+
+  # Rename columns of matrix or data frame (taken from ThorsonUtilities: https://github.com/james-thorson/utilities)
+  rename_columns = function( DF, origname=colnames(DF), newname ){
+    DF_new = DF
+    for(i in 1:length(origname)){
+      Match = match( origname[i], colnames(DF_new) )
+      if(length(Match)==1) colnames(DF_new)[Match] = newname[i]
+    }
+    return(DF_new)
   }
 
   ########################
@@ -75,7 +94,7 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGBTS_download")
 
     # Harmonize column names
-    Data = ThorsonUtilities::rename_columns( Downloaded_data, newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Proj","Vessel"))
+    Data = rename_columns( Downloaded_data, newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Proj","Vessel"))
   }
 
   # West Coast groundfish hook and line survey
@@ -103,7 +122,7 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
     if( !all(is.na(WCGHL_data[,'soak_time']) | WCGHL_data[,'soak_time']<600) ) stop("Check soak_time calculation for possible error")
 
     # Harmonize column names
-    Data = ThorsonUtilities::rename_columns( WCGHL_data[,c("total_catch_wt_kg","total_catch_numbers","date_dim$year","best_available_taxonomy_dim$scientific_name","site_dim$site_latitude_dd","site_dim$site_longitude_dd","TowID","soak_time","vessel")], newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Soak_Time_Minutes","Vessel"))
+    Data = rename_columns( WCGHL_data[,c("total_catch_wt_kg","total_catch_numbers","date_dim$year","best_available_taxonomy_dim$scientific_name","site_dim$site_latitude_dd","site_dim$site_longitude_dd","TowID","soak_time","vessel")], newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Soak_Time_Minutes","Vessel"))
   }
 
   # Eastern Bering Sea
@@ -131,7 +150,7 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
     # Add TowID
     Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
     # Harmonize column names
-    Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
+    Data = rename_columns( Data[,c('SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num') )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
@@ -161,7 +180,7 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
     # Add TowID
     Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
     # Harmonize column names
-    Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
+    Data = rename_columns( Data[,c('SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num') )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
@@ -191,7 +210,7 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
     # Add TowID
     Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
     # Harmonize column names
-    Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
+    Data = rename_columns( Data[,c('SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num') )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
@@ -210,10 +229,11 @@ survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, erro
   ######################
 
   # Add zeros
-  if( survey %in% c("WCGBTS", "WCGHL", "EBSBTS", "GOABTS", "AIBTS") ){
-    # data_frame=Data; unique_sample_ID_colname="TowID"; sample_colname="Wt"; species_subset=species_set; species_colname="Sci"; Method="Fast"
-    # if_multiple_records="Combine"; verbose=TRUE; na.rm=FALSE; save_name=NULL
-    DF = FishData::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
+  if( add_zeros==TRUE & survey%in%c("WCGBTS","WCGHL","EBSBTS","GOABTS","AIBTS") ){
+    DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
+  }else{  # FishData::
+    DF = Data[ which(Data[,'Sci'] %in% species_set), ]
+    DF[,'Sci'] = droplevels( factor(DF[,'Sci'], levels=species_set) )
   }
 
   return(DF)
