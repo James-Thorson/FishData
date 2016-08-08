@@ -1,8 +1,13 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 # based on example at https://github.com/hadley/tibble/blob/master/.travis.yml
+# Explanation of .Rbuildignore and other things:  http://jtleek.com/protocols/travis_bioc_devel/
 
 language: r
 cache: packages
+
+install:
+  ## For installing all CRAN dependencies using DESCRIPTION
+  - ./travis-tool.sh install_deps
 
 notifications:
   email:
