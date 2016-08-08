@@ -7,7 +7,7 @@ cache: packages
 
 install:
   ## For installing all CRAN dependencies using DESCRIPTION
-  - ./travis-tool.sh install_deps
+  - ./travis-tool.sh install_r jsonlite
 
 notifications:
   email:
