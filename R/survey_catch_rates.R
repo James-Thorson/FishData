@@ -1,9 +1,9 @@
 
 #' Compile and harmonize fish survey data
 #'
-#' \code{scrape_data} queries and harmonizes fish survey data from public databases
+#' \code{survey_catch_rates} queries and harmonizes fish survey data from public databases
 #'
-#' @param region name of region to be queried (currently only "Eastern_Bering_Sea")
+#' @param survey name of survey to be queried
 #' @param species_set either a character vector (giving scientific names of species) or a integer (giving number of most-frequently sighted species) to be queried
 #' @param error_tol tolerance for errors when error-checking the algorithm for adding zeros
 #' @param localdir local directory to save and load data from regional databases (to potentially avoid download times or problems without internet access)
@@ -11,14 +11,32 @@
 #' @return A data frame with survey data
 
 #' @export
-scrape_data = function( region="Eastern_Bering_Sea", species_set=10, error_tol=1e-12, localdir=NULL ){
+survey_catch_rates = function( survey="Eastern_Bering_Sea", species_set=10, error_tol=1e-12, localdir=NULL ){
+
+  ########################
+  # Initial book-keeping
+  ########################
 
   # Start
   DF = NULL
 
-  # California_current
+  # Match survey
+  survey = switch( survey, "Eastern_Bering_Sea"="EBSBTS", "EBS"="EBSBTS", "EBSBTS"="EBSBTS", "West_coast_groundfish_bottom_trawl_survey"="WCGBTS", "WCGBTS"="WCGBTS", "West_coast_groundfish_hook_and_line"="WCGHL", "WCGHL"="WCGHL", "GOABTS"="GOABTS", "GOA"="GOABTS", "Gulf_of_Alaska"="GOABTS", "Aleutian_Islands"="AIBTS", "AIBTS"="AIBTS", NA)
+  if( is.na(survey) ){
+    message("'survey' input didn't match available options, please check help file")
+    message("Options include:  'Eastern_Bering_Sea', 'Gulf of Alaska', 'Aleutian_Islands', 'West_coast_groundfish_bottom_trawl_survey', 'West_coast_groundfish_hook_and_line'")
+    return( invisible(NULL) )
+  }else{
+    message("downloading ",survey," survey...")
+  }
+
+  ########################
+  # Obtain data
+  ########################
+
+  # West Coast groundfish bottom trawl survey
   # https://www.nwfsc.noaa.gov/data/
-  if( region=="California_current" ){
+  if( survey=="WCGBTS" ){
     # data to save
     WCGBTS_data = NULL
 
@@ -48,20 +66,47 @@ scrape_data = function( region="Eastern_Bering_Sea", species_set=10, error_tol=1
 
     # Harmonize column names
     Data = ThorsonUtilities::rename_columns( WCGBTS_data, newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Proj","Vessel"))
+  }
 
-    # Determine species_set
-    if( is.numeric(species_set) ){
-      Num_occur = tapply( ifelse(Data[,'Wt']>0,1,0), INDEX=Data[,'Sci'], FUN=sum, na.rm=TRUE )
-      species_set = names(sort(Num_occur, decreasing=TRUE)[1:species_set])
+  # West Coast groundfish hook and line survey
+  # https://www.nwfsc.noaa.gov/data/
+  if( survey=="WCGHL" ){
+    # data to save
+    WCGHL_data = NULL
+
+    # Names of pieces
+    Vars = c("operation_type", "best_available_taxonomy_dim$scientific_name", "date_dim$yyyymmdd", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
+
+    # Download data
+    if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGHL_data.RData")) ){
+      # Download and unzip
+      Url_text = paste0("https://www.nwfsc.noaa.gov/data/api/v1/source/hooknline.catch_hooknline_view/selection.json?variables=",paste0(Vars,collapse=","))
+      message("Downloading all WCGHL catch-rate data from NWFSC server")
+      WCGHL_data = jsonlite::fromJSON( Url_text )
+    }
+    # Load if locally available
+    if( !is.null(localdir) & file.exists(paste0(localdir,"/WCGHL_data.RData")) ){
+      load( file=paste0(localdir,"/WCGHL_data.RData") )
+    }
+    # Save if not locally available
+    if( !is.null(localdir) & !file.exists(paste0(localdir,"/WCGHL_data.RData")) ){
+      save( WCGHL_data, file=paste0(localdir,"/WCGHL_data.RData") )
     }
 
-    # Add zeros
-    DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", error_tol=error_tol)
+    # Add HaulID
+    WCGHL_data = cbind( WCGHL_data, "TowID"=paste(WCGHL_data[,'date_dim$yyyymmdd'],WCGHL_data[,'site_dim$site_latitude_dd'],WCGHL_data[,'site_dim$site_longitude_dd'],sep="_") )
+
+    # Calculate effort measure
+    WCGHL_data = cbind( WCGHL_data, "soak_time"=WCGHL_data[,'sampling_end_time_dim$military_hour']*60+WCGHL_data[,'sampling_end_time_dim$minute']-(WCGHL_data[,'sampling_start_time_dim$military_hour']*60+WCGHL_data[,'sampling_start_time_dim$minute']))
+    if( !all(is.na(WCGHL_data[,'soak_time']) | WCGHL_data[,'soak_time']<600) ) stop("Check soak_time calculation for possible error")
+
+    # Harmonize column names
+    Data = ThorsonUtilities::rename_columns( WCGHL_data[,c("total_catch_wt_kg","total_catch_numbers","date_dim$year","best_available_taxonomy_dim$scientific_name","site_dim$site_latitude_dd","site_dim$site_longitude_dd","TowID","soak_time","vessel")], newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Soak_Time_Minutes","Vessel"))
   }
 
   # Eastern Bering Sea
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
-  if( region=="Eastern_Bering_Sea" ){
+  if( survey=="EBSBTS" ){
     # data to save
     EBS_data = NULL
 
@@ -95,20 +140,11 @@ scrape_data = function( region="Eastern_Bering_Sea", species_set=10, error_tol=1
     Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
-
-    # Determine species_set
-    if( is.numeric(species_set) ){
-      Num_occur = tapply( ifelse(Data[,'Wt']>0,1,0), INDEX=Data[,'Sci'], FUN=sum)
-      species_set = names(sort(Num_occur, decreasing=TRUE)[1:species_set])
-    }
-
-    # Add zeros
-    DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", error_tol=error_tol)
   }
 
   # Eastern Bering Sea
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
-  if( region=="Gulf_of_Alaska" ){
+  if( survey=="GOABTS" ){
     # data to save
     GOA_data = NULL
 
@@ -142,20 +178,11 @@ scrape_data = function( region="Eastern_Bering_Sea", species_set=10, error_tol=1
     Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
-
-    # Determine species_set
-    if( is.numeric(species_set) ){
-      Num_occur = tapply( ifelse(Data[,'Wt']>0,1,0), INDEX=Data[,'Sci'], FUN=sum)
-      species_set = names(sort(Num_occur, decreasing=TRUE)[1:species_set])
-    }
-
-    # Add zeros
-    DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", error_tol=error_tol)
   }
 
   # Eastern Bering Sea
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
-  if( region=="Aleutian_Islands" ){
+  if( survey=="AIBTS" ){
     # data to save
     AI_data = NULL
 
@@ -189,28 +216,28 @@ scrape_data = function( region="Eastern_Bering_Sea", species_set=10, error_tol=1
     Data = ThorsonUtilities::rename_columns( Data[,c('COMMON','SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Common','Sci','Year','TowID','Lat','Long','Wt','Num') )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
-
-    # Determine species_set
-    if( is.numeric(species_set) ){
-      Num_occur = tapply( ifelse(Data[,'Wt']>0,1,0), INDEX=Data[,'Sci'], FUN=sum)
-      species_set = names(sort(Num_occur, decreasing=TRUE)[1:species_set])
-    }
-
-    # Add zeros
-    DF = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", error_tol=error_tol)
   }
 
-  # Debugging -- check for errors in equal weight in add_missing_zeros function
-  if(FALSE){
-    DF1 = ThorsonUtilities::add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", error_tol=Inf)
-    DF2 = Data[which(Data[,'Sci']%in%species_set),]
-    # Check sums
-    tapply( DF1[,'Wt'], INDEX=DF1[,'Sci'], FUN=sum, na.rm=TRUE )
-    tapply( DF2[,'Wt'], INDEX=DF2[,'Sci'], FUN=sum, na.rm=TRUE )
+  ########################
+  # Determine species_set
+  ########################
+
+  if( is.numeric(species_set) ){
+    Num_occur = tapply( ifelse(Data[,'Wt']>0,1,0), INDEX=Data[,'Sci'], FUN=sum, na.rm=TRUE )
+    species_set = names(sort(Num_occur, decreasing=TRUE)[ 1:min(species_set,length(Num_occur)) ])
   }
 
-  # Return stuff
-  if( is.null(DF) ) stop("region didn't match options, please check code")
+  ######################
+  # Add missing zeros
+  ######################
+
+  # Add zeros
+  if( survey %in% c("WCGBTS", "WCGHL", "EBSBTS", "GOABTS", "AIBTS") ){
+    # data_frame=Data; unique_sample_ID_colname="TowID"; sample_colname="Wt"; species_subset=species_set; species_colname="Sci"; Method="Fast"
+    # if_multiple_records="Combine"; verbose=TRUE; na.rm=FALSE; save_name=NULL
+    DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
+  }      # FishData::
+
   return(DF)
 }
 
