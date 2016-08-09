@@ -25,7 +25,7 @@ language: r
 cache: packages
 
 r_packages:
-  jsonlite
+  jsonlite,
   testthat
 
 notifications:
