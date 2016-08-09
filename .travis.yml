@@ -2,6 +2,7 @@
 # based on example at https://github.com/hadley/tibble/blob/master/.travis.yml
 # Explanation of .Rbuildignore and other things:  http://jtleek.com/protocols/travis_bioc_devel/
 # Details for 'language: r' specification:  https://docs.travis-ci.com/user/languages/r/
+# Online check for syntax of .travis.yml (but doesn't work for R format)
 
 #language: c
 #

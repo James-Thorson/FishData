@@ -39,7 +39,7 @@ test_that("add_missing_zeros is working for EBSBTS ", {
 
 # Test 'add_missing_zeros' for Hook-and-line
   # Easy because TowID is unique
-test_that("add_missing_zeros is working for EBSBTS ", {
+test_that("add_missing_zeros is working for WCGHL ", {
   # Download data
   Data0 = download_catch_rates( survey="WCGHL", add_zeros=FALSE, species_set=Inf )
   Data = Data0[ which(Data0[,'Sci']=="Sebastes paucispinis"), ]
