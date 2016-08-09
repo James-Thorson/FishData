@@ -12,6 +12,7 @@ Depends:
 Imports: 
     jsonlite,
     testthat,
-    utils
+    utils,
+    curl
 License: GPL-2
 RoxygenNote: 5.0.1
