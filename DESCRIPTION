@@ -11,6 +11,7 @@ Depends:
     R (>= 3.1.0),
 Imports: 
     jsonlite,
-    testthat
+    testthat,
+    utils
 License: GPL-2
 RoxygenNote: 5.0.1
