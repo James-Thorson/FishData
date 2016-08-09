@@ -37,6 +37,8 @@ r_packages:
   - utils
   - jsonlite
 
+warnings_are_errors: false
+
 notifications:
   email:
     on_success: change
