@@ -4,7 +4,6 @@
 # Details for 'language: r' specification:  https://docs.travis-ci.com/user/languages/r/
 # Online check for syntax of .travis.yml (but doesn't work for R format):  http://lint.travis-ci.org/
 
-#script: ./travis-tool.sh run_tests
 language: c
 
 before_install:
