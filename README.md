@@ -1,6 +1,8 @@
 # FishData
 Compile and harmonize catch rates from fishery-independent surveys of fish populations
 
+[![Build Status](https://travis-ci.org/James-Thorson/FishData.svg?branch=master)](https://travis-ci.org/James-Thorson/FishData)
+
 # Description
 * Scrape and harmonize bottom trawl survey data from Alaska Fisheries Science Center and Northwest Fisheries Science Center
 * Adds zeros (sampling occasions without catch of any given species) automatically
