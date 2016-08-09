@@ -5,9 +5,9 @@
 \title{Add missing zeros to data frame of catch rates}
 \usage{
 add_missing_zeros(data_frame, unique_sample_ID_colname, sample_colname,
-  species_subset = NULL, species_colname, Method = "Slow",
-  if_multiple_records = "Error", verbose = TRUE, na.rm = FALSE,
-  save_name = NULL, error_tol = 1e-12)
+  species_colname, species_subset = NULL, Method = "Slow",
+  if_multiple_records = "Error", verbose = TRUE, save_name = NULL,
+  error_tol = 1e-12)
 }
 \arguments{
 \item{data_frame}{data frame containing data that missing zeros}
@@ -16,17 +16,15 @@ add_missing_zeros(data_frame, unique_sample_ID_colname, sample_colname,
 
 \item{sample_colname}{column name from 'data_frame' for sample of each species (e.g., representing catch in weight)}
 
-\item{species_subset}{character vector giving levels of 'species_colname' that should be retained (representing which species to keep);  if NULL, then \code{species_subset=levels(data_frame[,'species_colname'])}}
-
 \item{species_colname}{column name from 'data_frame' identifying species sampled for each row}
+
+\item{species_subset}{character vector giving levels of 'species_colname' that should be retained (representing which species to keep);  if NULL, then \code{species_subset=levels(data_frame[,'species_colname'])}}
 
 \item{Method}{whether to use fast or slow method (fast may be more robust, and has more options for multiple_records)}
 
 \item{if_multiple_records}{What to do if multiple rows have the same vales for \code{data_frame[,'unique_sample_ID_colname']} and \code{data_frame[,'species_colname']}}
 
 \item{verbose}{Boolean, whether to print output to screen}
-
-\item{na.rm}{Boolean, whether to omit rows with NAs in output data frame}
 
 \item{save_name}{optional directory for saving result locally}
 

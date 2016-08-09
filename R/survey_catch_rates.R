@@ -1,7 +1,7 @@
 
 #' Compile and harmonize fish survey data
 #'
-#' \code{survey_catch_rates} queries and harmonizes fish survey data from public databases
+#' \code{download_catch_rates} queries and harmonizes fish survey data from public databases
 #'
 #' @param survey name of survey to be queried
 #' @param add_zeros Boolean, whether to add zeros for species in samples that were conducted but where the species was not encountered (recommended: TRUE)
@@ -22,7 +22,7 @@
 #' }
 
 #' @export
-survey_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, species_set=10, error_tol=1e-12, localdir=NULL ){
+download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, species_set=10, error_tol=1e-12, localdir=NULL ){
 
   ########################
   # Initial book-keeping

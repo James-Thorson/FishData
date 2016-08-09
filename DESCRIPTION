@@ -10,6 +10,7 @@ Description: Compiles and harmonizes survey data for fish
 Depends:
     R (>= 3.1.0),
 Imports: 
-    jsonlite
+    jsonlite,
+    testthat
 License: GPL-2
 RoxygenNote: 5.0.1

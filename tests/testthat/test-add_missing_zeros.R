@@ -7,7 +7,7 @@ context("Testing 'add_missing_zeros'")
   # Easy because TowID is unique
 test_that("add_missing_zeros is working for EBSBTS ", {
   # Download data
-  Data0 = survey_catch_rates( survey="Eastern_Bering_Sea", add_zeros=FALSE, species_set=Inf )
+  Data0 = download_catch_rates( survey="Eastern_Bering_Sea", add_zeros=FALSE, species_set=Inf )
   Data = Data0[ which(Data0[,'Sci']=="Gadus chalcogrammus"), ]
 
   # add_missing_zeros -- combine
@@ -41,7 +41,7 @@ test_that("add_missing_zeros is working for EBSBTS ", {
   # Easy because TowID is unique
 test_that("add_missing_zeros is working for EBSBTS ", {
   # Download data
-  Data0 = survey_catch_rates( survey="WCGHL", add_zeros=FALSE, species_set=Inf )
+  Data0 = download_catch_rates( survey="WCGHL", add_zeros=FALSE, species_set=Inf )
   Data = Data0[ which(Data0[,'Sci']=="Sebastes paucispinis"), ]
 
   # add_missing_zeros -- combine
