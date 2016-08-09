@@ -136,9 +136,9 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     if( is.null(localdir) | !file.exists(paste0(localdir,"/EBSBTS_download.RData")) ){
       for(i in 1:length(files)){
         # Download and unzip
-        temp <- tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
-        download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ebs",files[i],".zip"),temp)
-        Data_tmp <- read.csv( unz(temp, paste0("ebs",files[i],".csv")) )
+        temp = tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
+        utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ebs",files[i],".zip"), temp)
+        Data_tmp = utils::read.csv( unz(temp, paste0("ebs",files[i],".csv")) )
         unlink(temp)
         # Append
         Downloaded_data = rbind( Downloaded_data, Data_tmp )
@@ -166,9 +166,9 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     if( is.null(localdir) | !file.exists(paste0(localdir,"/GOA_download.RData")) ){
       for(i in 1:length(files)){
         # Download and unzip
-        temp <- tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
-        download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/goa",files[i],".zip"),temp)
-        Data_tmp <- read.csv( unz(temp, paste0("goa",files[i],".csv")) )
+        temp = tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
+        utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/goa",files[i],".zip"),temp)
+        Data_tmp = utils::read.csv( unz(temp, paste0("goa",files[i],".csv")) )
         unlink(temp)
         # Append
         Downloaded_data = rbind( Downloaded_data, Data_tmp )
@@ -196,9 +196,9 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     if( is.null(localdir) | !file.exists(paste0(localdir,"/AI_download.RData")) ){
       for(i in 1:length(files)){
         # Download and unzip
-        temp <- tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
-        download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ai",files[i],".zip"),temp)
-        Data_tmp <- read.csv( unz(temp, paste0("ai",files[i],".csv")) )
+        temp = tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
+        utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ai",files[i],".zip"),temp)
+        Data_tmp = utils::read.csv( unz(temp, paste0("ai",files[i],".csv")) )
         unlink(temp)
         # Append
         Downloaded_data = rbind( Downloaded_data, Data_tmp )
