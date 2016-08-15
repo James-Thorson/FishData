@@ -119,8 +119,8 @@ add_missing_zeros = function( data_frame, unique_sample_ID_colname, sample_colna
       # Check that total biomass is identical
       Which = which( data_frame[,species_colname] %in% species_set )
       almost_equal = function(a,b,tol){ ifelse( is.na(a) | is.na(b) | (a==0 & b==0) | abs(a-b)/((a+b)/2)<tol, TRUE, FALSE ) }
-      New_counts = tapply( new_data_frame[,sample_colname], INDEX=list(factor(new_data_frame[,'Sci'],levels=species_set),new_data_frame[,'Year']), FUN=sum, na.rm=TRUE)
-      Old_counts = tapply( data_frame[Which,sample_colname], INDEX=list(factor(data_frame[Which,'Sci'],levels=species_set),data_frame[Which,'Year']), FUN=sum, na.rm=TRUE)
+      New_counts = tapply( new_data_frame[,sample_colname], INDEX=factor(new_data_frame[,species_colname],levels=species_set), FUN=sum, na.rm=TRUE)
+      Old_counts = tapply( data_frame[Which,sample_colname], INDEX=factor(data_frame[Which,species_colname],levels=species_set), FUN=sum, na.rm=TRUE)
       if( any(!almost_equal(New_counts, Old_counts, tol=error_tol)) ){
         stop( "missing rows in new data frame")
       }
