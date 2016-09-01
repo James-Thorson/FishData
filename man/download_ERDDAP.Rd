@@ -13,7 +13,7 @@ download_ERDDAP(Lat_bounds = c(min = 53, max = 66), Lon_bounds = c(min =
 
 \item{Lon_bounds}{minimum and maximum Longitude boundaries}
 
-\item{Date_bounds}{minimum and maximum dates (in 'month-day' format)}
+\item{Date_bounds}{minimum and maximum dates (in 'month-day' format), where data are averaged across this range}
 
 \item{Year_set}{Numeric vector of years to query}
 

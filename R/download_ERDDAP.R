@@ -5,7 +5,7 @@
 #'
 #' @param Lat_bounds minimum and maximum Latitude boundaries for downloading data
 #' @param Lon_bounds minimum and maximum Longitude boundaries
-#' @param Date_bounds minimum and maximum dates (in 'month-day' format)
+#' @param Date_bounds minimum and maximum dates (in 'month-day' format), where data are averaged across this range
 #' @param Year_set Numeric vector of years to query
 #' @param Variable character giving variable to download (options are 'SST' or 'Chl-a')
 
@@ -32,7 +32,7 @@ download_ERDDAP = function( Lat_bounds=c("min"=53,"max"=66), Lon_bounds=c("min"=
     # Chlorophyll-a (2003-2015): http://upwell.pfeg.noaa.gov/erddap/griddap/erdMH1chlamday
     if( Variable=="Chl-a" ){
       # Numbers latitude negative to positive
-      Url_text = paste0("http://upwell.pfeg.noaa.gov/erddap/griddap/erdMH1chlamday.json?chlorophyll[(",Year_set[tI],"-",Bounds['min','Dates'],"):",by['Day'],":(",Year_set[tI],"-",Date_bounds['max'],")][(",Lat_bounds['max'],"):",by['Lat'],":(",Lat_bounds['min'],")][(",Lon_bounds['min'],"):",by['Lon'],":(",Lon_bounds['max'],")]")
+      Url_text = paste0("http://upwell.pfeg.noaa.gov/erddap/griddap/erdMH1chlamday.json?chlorophyll[(",Year_set[tI],"-",Date_bounds['min'],"):",by['Day'],":(",Year_set[tI],"-",Date_bounds['max'],")][(",Lat_bounds['max'],"):",by['Lat'],":(",Lat_bounds['min'],")][(",Lon_bounds['min'],"):",by['Lon'],":(",Lon_bounds['max'],")]")
     }
     if( !exists("Url_text") ) stop("Check 'Variable'")
 
@@ -53,7 +53,7 @@ download_ERDDAP = function( Lat_bounds=c("min"=53,"max"=66), Lon_bounds=c("min"=
 
     # Average data at each site
     Data = cbind( Data, "Site"=paste0(Data[,'latitude'],"_",Data[,'longitude']))
-    Mean_Data = tapply( Data[,-match(c('latitude','longitude','Site'),names(Data))], INDEX=Data[,'Site'], FUN=mean )
+    Mean_Data = tapply( Data[,-match(c('latitude','longitude','Site'),names(Data))], INDEX=Data[,'Site'], FUN=mean, na.rm=TRUE )
 
     # Reform
     Mean_Data = cbind( "sst"=Mean_Data, "Lat"=sapply(names(Mean_Data), FUN=function(char){as.numeric(strsplit(char,split="_")[[1]][1])}), "Lon"=sapply(names(Mean_Data), FUN=function(char){as.numeric(strsplit(char,split="_")[[1]][2])}) )
@@ -67,7 +67,7 @@ download_ERDDAP = function( Lat_bounds=c("min"=53,"max"=66), Lon_bounds=c("min"=
 
 # Plot download
 if(FALSE){
-  DF_plot = download_ERDDAP( Variable=c("SST","Chl-a")[1], Year_set=2003 )
+  DF_plot = download_ERDDAP( Variable=c("SST","Chl-a")[2], Year_set=2003 )
   DF_plot = na.omit(DF_plot)
   library( mapdata )
   map( "worldHires", xlim=range(DF_plot[,'Lon']), ylim=range(DF_plot[,'Lat']))
