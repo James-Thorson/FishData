@@ -38,7 +38,7 @@ download_datras = function(survey="NS-IBTS", species_set=10, years=1981:2015, qu
   key <- c("Year", "Quarter", "Ship", "StNo", "HaulNo", "HaulID")
 
   # Add Lat/Lon
-  hl = cbind(hl, hh[match(hl$HaulID,hh$HaulID), c("ShootLat","ShootLong")])
+  hl = cbind(hl, hh[match(hl$HaulID,hh$HaulID), c("ShootLat","ShootLong","DataType","HaulDur")])
 
   # Add length units
   # from `DATRAS::addExtraVariables` here:  https://www.rforge.net/DATRAS/svn.html
@@ -81,10 +81,23 @@ download_datras = function(survey="NS-IBTS", species_set=10, years=1981:2015, qu
     species_set = data.frame( 'aphia'=aphia[match(species_set,aphia$species),'aphia_code'], 'species'=species_set)
   }
 
-  # Add missing zeros, and compress accross length bins
+  # Add expansion factors
   # TotalNo = sum( HLNoAtLngt*SubFactor )  # http://datras.ices.dk/Data_products/FieldDescription.aspx?Fields=HLNoAtLngt&SurveyID=2341
-  hl$expanded_number = with( hl, hl[,'HLNoAtLngt']*hl[,'SubFactor'] )    #
-  hl$expanded_weight = with( hl, hl[,'predicted_weight']*hl[,'HLNoAtLngt']*hl[,'SubFactor'] )    #
+  # TotalNo depends upon DataType (C is scaled to 1-hour tows, whereas other codes depend upon SubFactor)  # Pers. Comm. from Casper Berg
+  hl$expansion_factor = with( hl, ifelse(hl[,'DataType']=="C", hl[,'HaulDur']/60, hl[,'SubFactor']) )
+  hl$expanded_number = with( hl, hl[,'HLNoAtLngt']*hl[,'expansion_factor'] )    #
+  hl$expanded_weight = with( hl, hl[,'predicted_weight']*hl[,'HLNoAtLngt']*hl[,'expansion_factor'] )    #
+
+  # Debugging
+  if(FALSE){
+    Which = which( hl[,'Valid_Aphia']==species_set[,'aphia'] )
+    par( mfrow=c(1,3) )
+    plot( x=hl[Which,'SubFactor'], y=hl[Which,'HaulDur']/60, col=c("red","blue")[as.numeric(factor(hl[Which,'DataType'],levels=unique(hl[,'DataType'])))] )
+    plot( x=hl[Which,'expansion_factor'], y=hl[Which,'SubFactor'], col=c("red","blue")[as.numeric(factor(hl[Which,'DataType'],levels=unique(hl[,'DataType'])))] )
+    plot( x=hl[Which,'expansion_factor'], y=hl[Which,'HaulDur']/60, col=c("red","blue")[as.numeric(factor(hl[Which,'DataType'],levels=unique(hl[,'DataType'])))] )
+  }
+
+  # Add missing zeros, and compress accross length bins
   DF = FishData::add_missing_zeros( data_frame=hl, unique_sample_ID_colname="HaulID", sample_colname="expanded_weight", species_subset=species_set[,'aphia'], species_colname="Valid_Aphia", Method="Fast", if_multiple_records="Combine", error_tol=1e-2)
   DF2 = FishData::add_missing_zeros( data_frame=hl, unique_sample_ID_colname="HaulID", sample_colname="expanded_number", species_subset=species_set[,'aphia'], species_colname="Valid_Aphia", Method="Fast", if_multiple_records="Combine", error_tol=1e-2)
   DF$species = with( DF, species_set[match(x=DF[,'Valid_Aphia'], table=species_set[,'aphia']), 'species'])
