@@ -18,3 +18,16 @@ install.packages("devtools")
 # Install package
 devtools::install_github("james-thorson/FishData")
 ```
+
+# Example usage
+
+* Download 20 most-frequently encountered species in bottom trawl survey for the Eastern Bering Sea
+```R
+Database = FishData::download_catch_rates( survey="EBSBTS", species_set=20 )
+```
+
+* Download Bocaccio in hook-and-line survey for California Current
+```R
+Database = FishData::download_catch_rates( survey="WCGHL", species_set="Sebastes paucispinis" )
+```
+
