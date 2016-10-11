@@ -70,7 +70,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   ########################
   # Obtain data
   ########################
-
+	# RDB wants to add more columns to what's returned (e.g., depth)
   # West Coast groundfish bottom trawl survey
   # https://www.nwfsc.noaa.gov/data/
   if( survey=="WCGBTS" ){
