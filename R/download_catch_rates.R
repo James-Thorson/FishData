@@ -76,7 +76,12 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   if( survey=="WCGBTS" ){
     # Names of pieces
     files = 2003:2015
-    Vars = c("operation_dim$operation_id", "field_identified_taxonomy_dim$scientific_name", "date_dim$year", "haul_latitude_dim$latitude_in_degrees", "haul_longitude_dim$longitude_in_degrees", "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der", "operation_dim$vessel_id", "operation_dim$project_name" )
+		haul_vars <- c("area_swept_ha_der", "date_dim$year", "date_dim$yyyymmdd", "door_width_m_der", "fluorescence_at_surface_mg_per_m3_der", "haul_latitude_dim$latitude_in_degrees", "haul_longitude_dim$longitude_in_degrees", "invertebrate_weight_kg", "net_height_m_der", "net_width_m_der", "nonspecific_organics_weight_kg", "o2_at_gear_ml_per_l_der", "operation_dim$leg", "operation_dim$operation_id", "operation_dim$pass", "operation_dim$performance_result", "operation_dim$project_name", "operation_dim$vessel", "salinity_at_gear_psu_der", "sampling_end_time_dim$hh24miss", "sampling_start_time_dim$hh24miss", "seafloor_depth_m_der", "target_station_design_dim$stn_invalid_for_trawl_date_whid", "temperature_at_gear_c_der", "temperature_at_surface_c_der", "turbidity_ntu_der", "vertebrate_weight_kg") # taken from TrawlHaulChars.csv, downloaded from nwfsc website
+		haul_vars_choose <- "seafloor_depth_m_der" # maybe something like this could be derived from an argument; this is a testing placeholder
+		hvc_names <- "depth" # might be good to make haul_vars named, so that clean name can be inferred
+		stopifnot(all(haul_vars_choose %in% haul_vars)) # a placeholder check to make sure a user-requested variable is available
+    Vars_core = c("operation_dim$operation_id", "field_identified_taxonomy_dim$scientific_name", "date_dim$year", "haul_latitude_dim$latitude_in_degrees", "haul_longitude_dim$longitude_in_degrees", "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der", "operation_dim$vessel_id", "operation_dim$project_name" )
+		Vars <- c(Vars_core, haul_vars_choose)
 
     # Loop through download pieces
     Downloaded_data = NULL
@@ -94,7 +99,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGBTS_download")
 
     # Harmonize column names
-    Data = rename_columns( Downloaded_data, newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Proj","Vessel"))
+    Data = rename_columns( Downloaded_data, newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Proj","Vessel", hvc_names))
   }
 
   # West Coast groundfish hook and line survey
