@@ -1,9 +1,14 @@
 
 
-download_datras = function(survey="NS-IBTS", species_set=10, years=1981:2015, quarters=1, localdir=getwd() ){
+download_datras = function(survey="NS-IBTS", species_set=10, years=1981:2015, quarters=1, localdir=getwd(), verbose=TRUE ){
   # NOTES
   # CatCatchWgt varies among species within the same haul
   # CatCatchWgt seems to have many cases where it is implausibly low given fish lengths in that tow (e.g., HaulID="1991.1.ARG.NA.13" for "Gadus morhua")
+
+  # Area-swept notes:
+  # Irish West Coast Gov gear has a door width of 48 meters (https://datras.ices.dk/Home/Descriptions.aspx)
+  # Fresh survey has door width of 20 meters (https://datras.ices.dk/Home/Descriptions.aspx)
+  # Duration is in minutes
 
   # Download data if necessary
   if( !file.exists(paste0(localdir,"/",survey,"_hh.RData")) ){
@@ -59,8 +64,10 @@ download_datras = function(survey="NS-IBTS", species_set=10, years=1981:2015, qu
     if( nrow(DB)>10 ){
       # Fit weight-length key
       Lm = lm(log(IndWgt) ~ I(log(LngtClass*Length_units)), data=DB )
-      plot( x=log(DB$LngtClass*DB$Length_units), y=log(DB$IndWgt) )
-      abline( a=Lm$coef[1], b=Lm$coef[2] )
+      if( verbose==TRUE ){
+        plot( x=log(DB$LngtClass*DB$Length_units), y=log(DB$IndWgt) )
+        abline( a=Lm$coef[1], b=Lm$coef[2] )
+      }
 
       # Only predict if relationship makes sense
       if( Lm$coef['I(log(LngtClass * Length_units))']<4 | Lm$coef['I(log(LngtClass * Length_units))']>2.5 ){
@@ -88,18 +95,9 @@ download_datras = function(survey="NS-IBTS", species_set=10, years=1981:2015, qu
   hl$expanded_number = with( hl, hl[,'HLNoAtLngt']*hl[,'expansion_factor'] )    #
   hl$expanded_weight = with( hl, hl[,'predicted_weight']*hl[,'HLNoAtLngt']*hl[,'expansion_factor'] )    #
 
-  # Debugging
-  if(FALSE){
-    Which = which( hl[,'Valid_Aphia']==species_set[,'aphia'] )
-    par( mfrow=c(1,3) )
-    plot( x=hl[Which,'SubFactor'], y=hl[Which,'HaulDur']/60, col=c("red","blue")[as.numeric(factor(hl[Which,'DataType'],levels=unique(hl[,'DataType'])))] )
-    plot( x=hl[Which,'expansion_factor'], y=hl[Which,'SubFactor'], col=c("red","blue")[as.numeric(factor(hl[Which,'DataType'],levels=unique(hl[,'DataType'])))] )
-    plot( x=hl[Which,'expansion_factor'], y=hl[Which,'HaulDur']/60, col=c("red","blue")[as.numeric(factor(hl[Which,'DataType'],levels=unique(hl[,'DataType'])))] )
-  }
-
   # Add missing zeros, and compress accross length bins
-  DF = FishData::add_missing_zeros( data_frame=hl, unique_sample_ID_colname="HaulID", sample_colname="expanded_weight", species_subset=species_set[,'aphia'], species_colname="Valid_Aphia", Method="Fast", if_multiple_records="Combine", error_tol=1e-2)
-  DF2 = FishData::add_missing_zeros( data_frame=hl, unique_sample_ID_colname="HaulID", sample_colname="expanded_number", species_subset=species_set[,'aphia'], species_colname="Valid_Aphia", Method="Fast", if_multiple_records="Combine", error_tol=1e-2)
+  DF = FishData::add_missing_zeros( data_frame=hl, unique_sample_ID_colname="HaulID", sample_colname="expanded_weight", species_subset=species_set[,'aphia'], species_colname="Valid_Aphia", Method="Fast", if_multiple_records="Combine", error_tol=1e-2, verbose=verbose)
+  DF2 = FishData::add_missing_zeros( data_frame=hl, unique_sample_ID_colname="HaulID", sample_colname="expanded_number", species_subset=species_set[,'aphia'], species_colname="Valid_Aphia", Method="Fast", if_multiple_records="Combine", error_tol=1e-2, verbose=verbose)
   DF$species = with( DF, species_set[match(x=DF[,'Valid_Aphia'], table=species_set[,'aphia']), 'species'])
   DF2$species = with( DF2, species_set[match(x=DF2[,'Valid_Aphia'], table=species_set[,'aphia']), 'species'])
 
