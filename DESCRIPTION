@@ -13,6 +13,7 @@ Imports:
     jsonlite,
     testthat,
     utils,
+    devtools,
     curl
 License: GPL-2
 RoxygenNote: 5.0.1
