@@ -129,7 +129,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="EBSBTS" ){
     # Names of pieces
-    files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2015")
+    files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2016")
 
     # Loop through download pieces
     Downloaded_data = NULL
@@ -189,7 +189,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="AIBTS" ){
     # Names of pieces
-    files = c("1983_2000","2002_2012","2014")
+    files = c("1983_2000","2002_2012","2014_2016")
 
     # Loop through download pieces
     Downloaded_data = NULL
