@@ -236,6 +236,12 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     DF[,'Sci'] = droplevels( factor(DF[,'Sci'], levels=species_set) )
   }
 
+  ######################
+  # Other formatting changes
+  # 1. In 'Sci', replace " " with "_" (because spaces don't work well with URLs or other text naming conventions)
+  ######################
+  DF[,'Sci'] = factor(gsub(DF[,'Sci'],pattern=" ",replacement="_"), levels=gsub(species_set,pattern=" ",replacement="_") )
+
   return(DF)
 }
 
