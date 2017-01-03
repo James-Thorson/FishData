@@ -81,9 +81,11 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     # Loop through download pieces
     Downloaded_data = NULL
     if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGBTS_download.RData")) ){
+      URLbase <- "https://www.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=project=Groundfish%20Slope%20and%20Shelf%20Combination%20Survey,"
+
       for(i in 1:length(files)){
         # Download and unzip
-        Url_text = paste0("https://www.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=operation_dim$project_name=Groundfish%20Slope%20and%20Shelf%20Combination%20Survey,date_dim$year=",files[i],"&variables=",paste0(Vars,collapse=","))
+        Url_text = paste0(URLbase, "date_dim$year=",files[i],"&variables=",paste0(Vars,collapse=","))
         message("Downloading all WCGBTS catch-rate data for ",files[i]," from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
         Data_tmp = jsonlite::fromJSON( Url_text )
         # Append
