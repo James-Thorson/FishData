@@ -75,7 +75,10 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # https://www.nwfsc.noaa.gov/data/
   if( survey=="WCGBTS" ){
     # Names of pieces
-    Vars = c("operation_dim$operation_id", "field_identified_taxonomy_dim$scientific_name", "date_dim$year", "haul_latitude_dim$latitude_in_degrees", "haul_longitude_dim$longitude_in_degrees", "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der", "operation_dim$vessel_id", "operation_dim$project_name" )
+    Vars = c("tow", "field_identified_taxonomy_dim$scientific_name", "date_dim$year",
+      "latitude_dd", "longitude_dd",
+      "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der",
+      "operation_dim$vessel_id", "project")
 
     # Loop through download pieces
     Downloaded_data = NULL
@@ -91,7 +94,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGBTS_download")
 
     # Harmonize column names
-    Data = rename_columns( Downloaded_data, newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Proj","Vessel"))
+    Data = rename_columns( Downloaded_data, newname=c("Wt","Num","Year","Sci","Lat","Long","Vessel","Proj","TowID"))
   }
 
   # West Coast groundfish hook and line survey
