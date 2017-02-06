@@ -1,16 +1,16 @@
-# for Fish Base
+# download calcofi data from erddap
 
 # standardized catch per 10m2
 # pull data for the 14 species by Sam McClatchie as being important
 # custom speficied spp name, quarter
 # pulls information for all years
 # pulls information for all stations
-
+# returns a table of tows for all specified species
 
 
 # needs library(rerddap)
 
-download_calcofi = function(survey="CalCOFI", species=c("Bathylagus pacificus","Diogenichthys laternatus"), years=1951:2014, quarters=1, localdir=getwd(), verbose=TRUE ) {
+download_calcofi = function(survey="CalCOFI", species=c("Bathylagus pacificus","Diogenichthys laternatus"), years=1951:2014, quarters=1) {
   
   data_list <-list()
   
