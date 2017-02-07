@@ -75,26 +75,26 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # https://www.nwfsc.noaa.gov/data/
   if( survey=="WCGBTS" ){
     # Names of pieces
-    files = 2003:2015
-    Vars = c("operation_dim$operation_id", "field_identified_taxonomy_dim$scientific_name", "date_dim$year", "haul_latitude_dim$latitude_in_degrees", "haul_longitude_dim$longitude_in_degrees", "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der", "operation_dim$vessel_id", "operation_dim$project_name" )
+    Vars = c("tow", "field_identified_taxonomy_dim$scientific_name", "date_dim$year",
+      "latitude_dd", "longitude_dd",
+      "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der",
+      "operation_dim$vessel_id", "project")
 
     # Loop through download pieces
     Downloaded_data = NULL
     if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGBTS_download.RData")) ){
-      for(i in 1:length(files)){
+      URLbase <- "https://www.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=project=Groundfish%20Slope%20and%20Shelf%20Combination%20Survey,"
+      URLdate <- "date_dim$year>=2003"
         # Download and unzip
-        Url_text = paste0("https://www.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=operation_dim$project_name=Groundfish%20Slope%20and%20Shelf%20Combination%20Survey,date_dim$year=",files[i],"&variables=",paste0(Vars,collapse=","))
-        message("Downloading all WCGBTS catch-rate data for ",files[i]," from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
-        Data_tmp = jsonlite::fromJSON( Url_text )
-        # Append
-        Downloaded_data = rbind( Downloaded_data, Data_tmp )
-      }
+        Url_text = paste0(URLbase, URLdate, "&variables=", paste0(Vars,collapse=","))
+        message("Downloading all WCGBTS catch-rate data for 2003 and newer from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
+        Downloaded_data = jsonlite::fromJSON( Url_text )
     }
     # Load if locally available, and save if not
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGBTS_download")
 
     # Harmonize column names
-    Data = rename_columns( Downloaded_data, newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Proj","Vessel"))
+    Data = rename_columns( Downloaded_data, newname=c("Wt","Num","Year","Sci","Lat","Long","Vessel","Proj","TowID"))
   }
 
   # West Coast groundfish hook and line survey
