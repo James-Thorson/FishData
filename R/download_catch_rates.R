@@ -76,12 +76,12 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   if( survey=="WCGBTS" ){
     # Names of pieces
     files = 2003:2016
-    #Vars = c("operation_dim$operation_id", "field_identified_taxonomy_dim$scientific_name", "date_dim$year", "haul_latitude_dim$latitude_in_degrees", "haul_longitude_dim$longitude_in_degrees", "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der", "operation_dim$vessel_id", "operation_dim$project_name" )
     Vars = c("field_identified_taxonomy_dim$scientific_name", "date_dim$year", "tow",
       "latitude_dd", "longitude_dd",
       "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der",
-      "vessel_id", "project")
+      "vessel_id", "project", "actual_station_design_dim$mean_depth_m", "blank")
     URLbase <- "https://www.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=project=Groundfish%20Slope%20and%20Shelf%20Combination%20Survey,"
+
     # Loop through download pieces
     Downloaded_data = NULL
     if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGBTS_download.RData")) ){
@@ -98,8 +98,8 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGBTS_download")
 
     # Harmonize column names
-    #Data = rename_columns( Downloaded_data, newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Proj","Vessel"))
-    Data = rename_columns( Downloaded_data[,Vars], newname=c("Sci","Year","TowID","Lat","Long","Wt","Num","Vessel","Proj"))
+    Data = rename_columns( Downloaded_data[,Vars[Vars%in%colnames(Downloaded_data)]], newname=c("Sci","Year","TowID","Lat","Long","Wt","Num","Vessel","Proj","Depth_m"))
+    Data[,'TowID'] = paste0( Data[,'Year'], "_", Data[,'TowID'] )
   }
 
   # West Coast groundfish hook and line survey
