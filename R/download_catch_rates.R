@@ -77,7 +77,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     # Names of pieces
     files = 2003:2016
     Vars = c("field_identified_taxonomy_dim$scientific_name", "date_dim$year", "tow",
-      "latitude_dd", "longitude_dd",
+      "latitude_dd", "longitude_dd", "centroid_id", "area_swept_ha_der",
       "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der",
       "vessel_id", "project", "actual_station_design_dim$mean_depth_m", "blank")
     URLbase <- "https://www.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=project=Groundfish%20Slope%20and%20Shelf%20Combination%20Survey,"
@@ -98,8 +98,8 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGBTS_download")
 
     # Harmonize column names
-    Data = rename_columns( Downloaded_data[,Vars[Vars%in%colnames(Downloaded_data)]], newname=c("Sci","Year","TowID","Lat","Long","Wt","Num","Vessel","Proj","Depth_m"))
-    Data[,'TowID'] = paste0( Data[,'Year'], "_", Data[,'TowID'] )
+    Data = rename_columns( Downloaded_data[,Vars[Vars%in%colnames(Downloaded_data)]], newname=c("Sci","Year","TowID","Lat","Long","Cell","AreaSept_ha","Wt","Num","Vessel","Proj","Depth_m"))
+    Data[,'TowID'] = paste0( Data[,'Year'], "_", Data[,'TowID'], "_", Data[,'Cell'] )
   }
 
   # West Coast groundfish hook and line survey
