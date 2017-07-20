@@ -109,8 +109,6 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
 
     Vars = c("operation_type", "best_available_taxonomy_dim$genus_70","best_available_taxonomy_dim$species_80", "date_dim$full_date", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
 
-    # Vars = c("operation_type", "best_available_taxonomy_dim$scientific_name", "date_dim$yyyymmdd", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
-
     # Download data
     Downloaded_data = NULL
     if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGHL_download.RData")) ){
