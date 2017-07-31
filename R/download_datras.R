@@ -1,6 +1,6 @@
 
 
-download_datras = function(survey="NS-IBTS", species_set=10, years=1981:2015, quarters=1, localdir=getwd(), verbose=TRUE ){
+download_datras = function(survey="NS-IBTS", species_set=10, years=1981:2015, gear="Gov", quarters=1, localdir=getwd(), verbose=TRUE ){
   # NOTES
   # CatCatchWgt varies among species within the same haul
   # CatCatchWgt seems to have many cases where it is implausibly low given fish lengths in that tow (e.g., HaulID="1991.1.ARG.NA.13" for "Gadus morhua")
@@ -30,11 +30,20 @@ download_datras = function(survey="NS-IBTS", species_set=10, years=1981:2015, qu
     load( file=paste0(localdir,"/",survey,"_ca.RData"))
   }
 
+  # Restrict to a given gear
+  if( verbose==TRUE ){
+    print( paste0("Rows in hh: ", nrow(hh)) )
+    print( paste0("Rows in hh with Gear=",gear,": ", sum(tolower(hh$Gear) %in% tolower(gear))) )
+  }
+  hh = hh[ which(tolower(hh$Gear) %in% tolower(gear)), ]
+
   # Load species name key
   data( aphia, package="icesDatras" )
   #on.exit( remove("aphia"), add=TRUE )
+  #worms <- icesVocab::getCodeList("SpecWoRMS")
   unique_species = data.frame('code'=na.omit(unique(hl$Valid_Aphia)))
   unique_species$genus_species = with(unique_species, aphia[ match(unique_species$code,aphia$aphia_code), 'species'])
+  #unique_species$genus_species = with(unique_species, aphia[ match(unique_species$code,worms$Key), 'species'])
 
   # Add uniqueID
   hl$HaulID <- with(hl, paste(Year, Quarter, Ship, StNo, HaulNo, sep = "."))
