@@ -43,6 +43,7 @@ download_datras = function(survey="NS-IBTS", species_set=10, years=1981:2015, ge
   #worms <- icesVocab::getCodeList("SpecWoRMS")
   unique_species = data.frame('code'=na.omit(unique(hl$Valid_Aphia)))
   unique_species$genus_species = with(unique_species, aphia[ match(unique_species$code,aphia$aphia_code), 'species'])
+  unique_species$num_weight_at_age_measurements = with(unique_species, NA)
   #unique_species$genus_species = with(unique_species, aphia[ match(unique_species$code,worms$Key), 'species'])
 
   # Add uniqueID
@@ -68,6 +69,7 @@ download_datras = function(survey="NS-IBTS", species_set=10, years=1981:2015, ge
     # Observations with sufficient data for weight-length key
     DB = na.omit(ca[which(ca$Valid_Aphia==unique_species[pI,'code']),c('IndWgt','LngtClass','Length_units')])
     DB = DB[ which(DB[,'IndWgt']>0), ]
+    unique_species[pI,'num_weight_at_age_measurements'] = nrow(DB)
 
     # Only predict if data are sufficient
     if( nrow(DB)>10 ){
