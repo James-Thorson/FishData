@@ -32,7 +32,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   survey = switch( survey, "Eastern_Bering_Sea"="EBSBTS", "EBS"="EBSBTS", "EBSBTS"="EBSBTS", "West_coast_groundfish_bottom_trawl_survey"="WCGBTS", "WCGBTS"="WCGBTS", "West_coast_groundfish_hook_and_line"="WCGHL", "WCGHL"="WCGHL", "GOABTS"="GOABTS", "GOA"="GOABTS", "Gulf_of_Alaska"="GOABTS", "Aleutian_Islands"="AIBTS", "AIBTS"="AIBTS", NA)
   if( is.na(survey) ){
     message("'survey' input didn't match available options, please check help file")
-    message("Options include:  'Eastern_Bering_Sea', 'Gulf of Alaska', 'Aleutian_Islands', 'West_coast_groundfish_bottom_trawl_survey', 'West_coast_groundfish_hook_and_line'")
+    message("Options include:  'Eastern_Bering_Sea', 'Gulf_of_Alaska', 'Aleutian_Islands', 'West_coast_groundfish_bottom_trawl_survey', 'West_coast_groundfish_hook_and_line'")
     return( invisible(NULL) )
   }else{
     message("Obtaining data for ",survey," survey...")
@@ -113,7 +113,9 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # https://www.nwfsc.noaa.gov/data/
   if( survey=="WCGHL" ){
     # Names of pieces
-    Vars = c("operation_type", "best_available_taxonomy_dim$scientific_name", "date_dim$yyyymmdd", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
+    # Vars = c("operation_type", "best_available_taxonomy_dim$scientific_name", "date_dim$yyyymmdd", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
+
+    Vars = c("operation_type", "best_available_taxonomy_dim$genus_70","best_available_taxonomy_dim$species_80", "date_dim$full_date", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
 
     # Download data
     Downloaded_data = NULL
@@ -126,22 +128,30 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     # Load if locally available, and save if not
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGHL_download")
 
+    # add scientific name
+    Downloaded_data$scientific_name <-
+      paste(
+        Downloaded_data$`best_available_taxonomy_dim$genus_70`,
+        ifelse(is.na(Downloaded_data$`best_available_taxonomy_dim$species_80`), 'sp.', Downloaded_data$`best_available_taxonomy_dim$species_80`)
+      )
+
+
     # Add HaulID
-    WCGHL_data = cbind( Downloaded_data, "TowID"=paste(Downloaded_data[,'date_dim$yyyymmdd'],Downloaded_data[,'site_dim$site_latitude_dd'],Downloaded_data[,'site_dim$site_longitude_dd'],sep="_") )
+    WCGHL_data = cbind( Downloaded_data, "TowID"=paste(Downloaded_data[,'date_dim$year'],Downloaded_data[,'site_dim$site_latitude_dd'],Downloaded_data[,'site_dim$site_longitude_dd'],sep="_") )
 
     # Calculate effort measure
     WCGHL_data = cbind( WCGHL_data, "soak_time"=WCGHL_data[,'sampling_end_time_dim$military_hour']*60+WCGHL_data[,'sampling_end_time_dim$minute']-(WCGHL_data[,'sampling_start_time_dim$military_hour']*60+WCGHL_data[,'sampling_start_time_dim$minute']))
     if( !all(is.na(WCGHL_data[,'soak_time']) | WCGHL_data[,'soak_time']<600) ) stop("Check soak_time calculation for possible error")
 
     # Harmonize column names
-    Data = rename_columns( WCGHL_data[,c("total_catch_wt_kg","total_catch_numbers","date_dim$year","best_available_taxonomy_dim$scientific_name","site_dim$site_latitude_dd","site_dim$site_longitude_dd","TowID","soak_time","vessel")], newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Soak_Time_Minutes","Vessel"))
+    Data = rename_columns( WCGHL_data[,c("total_catch_wt_kg","total_catch_numbers","date_dim$year","scientific_name","site_dim$site_latitude_dd","site_dim$site_longitude_dd","TowID","soak_time","vessel")], newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Soak_Time_Minutes","Vessel"))
   }
 
   # Eastern Bering Sea
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="EBSBTS" ){
     # Names of pieces
-    files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2016")
+    files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2016","2017")
 
     # Loop through download pieces
     Downloaded_data = NULL
@@ -171,8 +181,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="GOABTS" ){
     # Names of pieces
-    files = c("1984_1987","1990_1999","2001_2005","2007_2013","2015")
-
+    files = c("1984_1987","1990_1999","2001_2005","2007_2013","2015_2017")
     # Loop through download pieces
     Downloaded_data = NULL
     if( is.null(localdir) | !file.exists(paste0(localdir,"/GOA_download.RData")) ){
@@ -241,6 +250,23 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   ######################
 
   # Add zeros
+
+  # fix characters in numeric columns
+
+  for (i in 1:ncol(Data)){
+
+    possible_numeric = any(is.na(as.numeric(Data[,i])) == F) & is.factor(Data[,i]) == F
+
+    if (possible_numeric == T){
+
+      Data[, i] = as.numeric(Data[,i])
+
+    }
+
+  }
+
+  Data <- Data[is.na(Data$Lat) == F, ] # remove former header rows that were included in data
+
   if( add_zeros==TRUE & survey%in%c("WCGBTS","WCGHL","EBSBTS","GOABTS","AIBTS") ){
     DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
   }else{  # FishData::
