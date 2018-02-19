@@ -8,7 +8,7 @@
   packageStartupMessage("This package is in development, and comes with no implied or explicit guaruntee of accuracy")
   packageStartupMessage("Interested users should read the code and consult the survey-specific websites being queried")
   packageStartupMessage("###########################################################################################")
-  if( !"icesDatras" %in% installed.packages()[,1] ){
+  if( !"icesDatras" %in% utils::installed.packages()[,1] ){
     print("Installing package: icesDatras...")
     devtools::install_github('ices-tools-prod/icesDatras', ref="1.1-1")
   }else{
