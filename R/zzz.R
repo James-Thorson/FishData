@@ -12,7 +12,7 @@
     print("Installing package: icesDatras...")
     devtools::install_github('ices-tools-prod/icesDatras', ref="1.1-1")
   }else{
-    Data = data( package="icesDatras", verbose=FALSE )
+    Data = utils::data( package="icesDatras", verbose=FALSE )
     if( !("aphia" %in% Data$results[,'Item']) ) stop("Must use `icesDatras` version `1.1=1` from GitHub")
   }
 }
