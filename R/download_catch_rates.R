@@ -67,6 +67,20 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     return(DF_new)
   }
 
+   remove_header_rows <- function(Data_tmp){
+    if( any(Data_tmp[,'YEAR']=="YEAR" & is.na(Data_tmp[, "YEAR"]) == F) ){
+
+    Which2Remove = which( Data_tmp[,'YEAR']=="YEAR" )
+    Data_tmp = Data_tmp[-Which2Remove,]
+    utils::write.csv( Data_tmp, file=paste0(tempdir(),"rewrite_data",files[i],".csv"), row.names=FALSE )
+    Data_tmp = utils::read.csv( paste0(tempdir(),"rewrite_data",files[i],".csv"))
+    } else{
+
+      Data_tmp = Data_tmp
+
+    }
+   }
+
   ########################
   # Obtain data
   ########################
@@ -113,7 +127,8 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # https://www.nwfsc.noaa.gov/data/
   if( survey=="WCGHL" ){
     # Names of pieces
-    Vars = c("operation_type", "best_available_taxonomy_dim$scientific_name", "date_dim$yyyymmdd", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
+    # Vars = c("operation_type", "best_available_taxonomy_dim$scientific_name", "date_dim$yyyymmdd", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
+    Vars = c("operation_type", "best_available_taxonomy_dim$genus_70","best_available_taxonomy_dim$species_80", "date_dim$full_date", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
 
     # Download data
     Downloaded_data = NULL
@@ -126,32 +141,48 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     # Load if locally available, and save if not
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGHL_download")
 
+    # add scientific name
+    Downloaded_data$scientific_name <-
+      paste(
+        Downloaded_data$`best_available_taxonomy_dim$genus_70`,
+        ifelse(is.na(Downloaded_data$`best_available_taxonomy_dim$species_80`), 'sp.', Downloaded_data$`best_available_taxonomy_dim$species_80`)
+      )
+
     # Add HaulID
-    WCGHL_data = cbind( Downloaded_data, "TowID"=paste(Downloaded_data[,'date_dim$yyyymmdd'],Downloaded_data[,'site_dim$site_latitude_dd'],Downloaded_data[,'site_dim$site_longitude_dd'],sep="_") )
+    WCGHL_data = cbind( Downloaded_data, "TowID"=paste(Downloaded_data[,'date_dim$year'],Downloaded_data[,'site_dim$site_latitude_dd'],Downloaded_data[,'site_dim$site_longitude_dd'],sep="_") )
 
     # Calculate effort measure
     WCGHL_data = cbind( WCGHL_data, "soak_time"=WCGHL_data[,'sampling_end_time_dim$military_hour']*60+WCGHL_data[,'sampling_end_time_dim$minute']-(WCGHL_data[,'sampling_start_time_dim$military_hour']*60+WCGHL_data[,'sampling_start_time_dim$minute']))
     if( !all(is.na(WCGHL_data[,'soak_time']) | WCGHL_data[,'soak_time']<600) ) stop("Check soak_time calculation for possible error")
 
     # Harmonize column names
-    Data = rename_columns( WCGHL_data[,c("total_catch_wt_kg","total_catch_numbers","date_dim$year","best_available_taxonomy_dim$scientific_name","site_dim$site_latitude_dd","site_dim$site_longitude_dd","TowID","soak_time","vessel")], newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Soak_Time_Minutes","Vessel"))
+    Data = rename_columns( WCGHL_data[,c("total_catch_wt_kg","total_catch_numbers","date_dim$year","scientific_name","site_dim$site_latitude_dd","site_dim$site_longitude_dd","TowID","soak_time","vessel")], newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Soak_Time_Minutes","Vessel"))
   }
 
   # Eastern Bering Sea
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="EBSBTS" ){
     # Names of pieces
-    files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2016")
+    files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2016","2017")
 
     # Loop through download pieces
     Downloaded_data = NULL
     if( is.null(localdir) | !file.exists(paste0(localdir,"/EBSBTS_download.RData")) ){
       for(i in 1:length(files)){
         # Download and unzip
-        temp = tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
+        Tempdir = paste0( tempdir(), "/" )
+        dir.create(Tempdir)
+        temp = tempfile(pattern="file_", tmpdir=Tempdir, fileext=".zip")
         utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ebs",files[i],".zip"), temp)
         Data_tmp = utils::read.csv( unz(temp, paste0("ebs",files[i],".csv")) )
         unlink(temp)
+
+        Data_tmp <- remove_header_rows(Data_tmp)
+
+        # Remove any row that repeats column headers again
+        #
+        Data_tmp <- remove_header_rows(Data_tmp)
+
         # Append
         Downloaded_data = rbind( Downloaded_data, Data_tmp )
       }
@@ -171,8 +202,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="GOABTS" ){
     # Names of pieces
-    files = c("1984_1987","1990_1999","2001_2005","2007_2013","2015")
-
+    files = c("1984_1987","1990_1999","2001_2005","2007_2013","2015_2017")
     # Loop through download pieces
     Downloaded_data = NULL
     if( is.null(localdir) | !file.exists(paste0(localdir,"/GOA_download.RData")) ){
@@ -180,15 +210,17 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
         # Download and unzip
         temp = tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
         utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/goa",files[i],".zip"),temp)
-        Data_tmp = utils::read.csv( unz(temp, paste0("goa",files[i],".csv")) )
+        Data_tmp = utils::read.csv( unz(temp, paste0("goa",files[i],".csv")), stringsAsFactors = F)
         unlink(temp)
+        # Remove any row that repeats column headers again
+        Data_tmp <- remove_header_rows(Data_tmp)
+
         # Append
         Downloaded_data = rbind( Downloaded_data, Data_tmp )
       }
     }
     # Load if locally available, and save if not
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="GOA_download")
-
     # Add TowID
     Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
     # Harmonize column names
@@ -196,6 +228,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
+
 
   # Aleutian Islands
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
@@ -212,6 +245,9 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
         utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ai",files[i],".zip"),temp)
         Data_tmp = utils::read.csv( unz(temp, paste0("ai",files[i],".csv")) )
         unlink(temp)
+
+        Data_tmp <- remove_header_rows(Data_tmp)
+
         # Append
         Downloaded_data = rbind( Downloaded_data, Data_tmp )
       }
@@ -230,7 +266,6 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   ########################
   # Determine species_set
   ########################
-
   if( is.numeric(species_set) ){
     Num_occur = tapply( ifelse(Data[,'Wt']>0,1,0), INDEX=Data[,'Sci'], FUN=sum, na.rm=TRUE )
     species_set = names(sort(Num_occur, decreasing=TRUE)[ 1:min(species_set,length(Num_occur)) ])
