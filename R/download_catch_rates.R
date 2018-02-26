@@ -141,17 +141,26 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="EBSBTS" ){
     # Names of pieces
-    files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2016")
+    files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2016","2017")
 
     # Loop through download pieces
     Downloaded_data = NULL
     if( is.null(localdir) | !file.exists(paste0(localdir,"/EBSBTS_download.RData")) ){
       for(i in 1:length(files)){
         # Download and unzip
-        temp = tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
+        Tempdir = paste0( tempdir(), "/" )
+        dir.create(Tempdir)
+        temp = tempfile(pattern="file_", tmpdir=Tempdir, fileext=".zip")
         utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ebs",files[i],".zip"), temp)
         Data_tmp = utils::read.csv( unz(temp, paste0("ebs",files[i],".csv")) )
         unlink(temp)
+        # Remove any row that repeats column headers again
+        if( any(Data_tmp[,'YEAR']=="YEAR") ){
+          Which2Remove = which( Data_tmp[,'YEAR']=="YEAR" )
+          Data_tmp = Data_tmp[-Which2Remove,]
+          utils::write.csv( Data_tmp, file=paste0(Tempdir,"rewrite_ebs",files[i],".csv"), row.names=FALSE )
+          Data_tmp = utils::read.csv( paste0(Tempdir,"rewrite_ebs",files[i],".csv") )
+        }
         # Append
         Downloaded_data = rbind( Downloaded_data, Data_tmp )
       }
