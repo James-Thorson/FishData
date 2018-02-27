@@ -23,7 +23,6 @@
 
 #' @export
 download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, species_set=10, error_tol=1e-12, localdir=NULL ){
-
   ########################
   # Initial book-keeping
   ########################
@@ -68,9 +67,12 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   }
 
    remove_header_rows <- function(Data_tmp){
-    if( any(Data_tmp[,'YEAR']=="YEAR" & is.na(Data_tmp[, "YEAR"]) == F) ){
 
-    Which2Remove = which( Data_tmp[,'YEAR']=="YEAR" )
+     year_column = which(grepl("year", tolower(colnames(Data_tmp)))) # year column is not always called YEAR
+
+     if (any(Data_tmp[, year_column] == "YEAR" &
+             is.na(Data_tmp[, year_column]) == F)) {
+    Which2Remove = which( Data_tmp[, year_column]=="YEAR" )
     Data_tmp = Data_tmp[-Which2Remove,]
     utils::write.csv( Data_tmp, file=paste0(tempdir(),"rewrite_data",files[i],".csv"), row.names=FALSE )
     Data_tmp = utils::read.csv( paste0(tempdir(),"rewrite_data",files[i],".csv"))
@@ -89,7 +91,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # https://www.nwfsc.noaa.gov/data/
   if( survey=="WCGBTS" ){
     # Names of pieces
-    files = 2003:2016
+    files = 2003:2015
     Vars = c("field_identified_taxonomy_dim$scientific_name", "date_dim$year", "tow",
       "latitude_dd", "longitude_dd", "centroid_id", "area_swept_ha_der",
       "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der",
@@ -104,12 +106,16 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
         Url_text = paste0(URLbase,"date_dim$year=",files[i],"&variables=",paste0(Vars,collapse=","))
         message("Downloading all WCGBTS catch-rate data for ",files[i]," from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
         Data_tmp = jsonlite::fromJSON( Url_text )
+
+        Data_tmp <- remove_header_rows(Data_tmp)
+
         # Append
         Downloaded_data = rbind( Downloaded_data, Data_tmp )
       }
     }
     # Load if locally available, and save if not
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGBTS_download")
+
 
     # Convert from KG and Num per Hectare to KG and Num, with hectares as a separate column
     if( "area_swept_ha_der" %in% colnames(Downloaded_data) ){
@@ -136,7 +142,13 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
       # Download and unzip
       Url_text = paste0("https://www.nwfsc.noaa.gov/data/api/v1/source/hooknline.catch_hooknline_view/selection.json?variables=",paste0(Vars,collapse=","))
       message("Downloading all WCGHL catch-rate data from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
+
+
       Downloaded_data = jsonlite::fromJSON( Url_text )
+
+      Downloaded_data <- remove_header_rows(Downloaded_data)
+
+
     }
     # Load if locally available, and save if not
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGHL_download")
@@ -177,10 +189,8 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
         Data_tmp = utils::read.csv( unz(temp, paste0("ebs",files[i],".csv")) )
         unlink(temp)
 
-        Data_tmp <- remove_header_rows(Data_tmp)
-
         # Remove any row that repeats column headers again
-        #
+
         Data_tmp <- remove_header_rows(Data_tmp)
 
         # Append
