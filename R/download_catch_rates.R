@@ -117,13 +117,15 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGBTS_download")
 
 
-    # Convert from KG and Num per Hectare to KG and Num, with hectares as a separate column
+    # Convert from KG and Num per Hectare to KG and Num, with hectares as a separate column (not currently working properly because area_swept_ha_der not present)
     if( "area_swept_ha_der" %in% colnames(Downloaded_data) ){
       Downloaded_data[c('cpue_kg_per_ha_der','cpue_numbers_per_ha_der')] = Downloaded_data[c('cpue_kg_per_ha_der','cpue_numbers_per_ha_der')] * outer(Downloaded_data[,'area_swept_ha_der'],c(1,1))
     }else{
       Downloaded_data = cbind( Downloaded_data, "area_swept_ha_der"=1 )
     }
-
+    # setting numbers to NA for now to avoid issue with function that inserts zero values for hauls without observations
+    Downloaded_data[,'cpue_numbers_per_ha_der'] = NA
+    
     # Harmonize column names
     Data = rename_columns( Downloaded_data[,Vars[which(Vars%in%names(Downloaded_data))]], newname=c("Sci","Year","TowID","Lat","Long","Cell","AreaSept_ha","Wt","Num","Vessel","Proj","Depth_m")[which(Vars%in%names(Downloaded_data))] )
     Data[,'TowID'] = paste0( Data[,'Year'], "_", Data[,'TowID'], "_", Data[,'Cell'] )
