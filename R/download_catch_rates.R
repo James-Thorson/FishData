@@ -22,7 +22,7 @@
 #' }
 
 #' @export
-download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, species_set=10, error_tol=1e-12, localdir=NULL ){
+download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, species_set=10, error_tol=1e-12, localdir=NULL, measurement_type="biomass" ){
   ########################
   # Initial book-keeping
   ########################
@@ -325,9 +325,18 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   ######################
 
   # Add zeros
-  if( add_zeros==TRUE & survey%in%c("WCGBTS","WCGHL","EBSBTS","GOABTS","AIBTS") ){
-    DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
+  if( add_zeros==TRUE & survey%in%c("WCGBTS","WCGHL","EBSBTS","GOABTS","AIBTS","NBSBTS") ){
+    message( "Adding missing zeros")
+    if( measurement_type=="biomass" ){
+      DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
+      DF = DF[,c("Sci","Year","TowID","Lat","Long","Wt")]
+    }
+    if( measurement_type=="numbers" ){
+      DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Num", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
+      DF = DF[,c("Sci","Year","TowID","Lat","Long","Num")]
+    }
   }else{  # FishData::
+    message( "Not adding missing zeros")
     DF = Data[ which(Data[,'Sci'] %in% species_set), ]
     DF[,'Sci'] = droplevels( factor(DF[,'Sci'], levels=species_set) )
   }
