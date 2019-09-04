@@ -12,9 +12,10 @@ Depends:
 Imports: 
     curl,
     jsonlite,
-    testthat,
     utils,
-    devtools,
+    devtools
+Suggests:
+    testthat,
     RCurl
 License: GPL-2
 RoxygenNote: 5.0.1
