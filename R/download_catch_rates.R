@@ -28,7 +28,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   ########################
 
   # Match survey
-  survey = switch( survey, "Eastern_Bering_Sea"="EBSBTS", "EBS"="EBSBTS", "EBSBTS"="EBSBTS", "Northern_Bering_Sea"="NBSBTS", "NBS"="NBSBTS", "West_coast_groundfish_bottom_trawl_survey"="WCGBTS", "WCGBTS"="WCGBTS", "West_coast_groundfish_hook_and_line"="WCGHL", "WCGHL"="WCGHL", "GOABTS"="GOABTS", "GOA"="GOABTS", "Gulf_of_Alaska"="GOABTS", "Aleutian_Islands"="AIBTS", "AIBTS"="AIBTS", NA)
+  survey = switch( survey, "Eastern_Bering_Sea"="EBSBTS", "EBS"="EBSBTS", "EBSBTS"="EBSBTS", "Northern_Bering_Sea"="NBSBTS", "NBS"="NBSBTS", "West_coast_groundfish_bottom_trawl_survey"="WCGBTS","West_coast_triennial"="WCT","WCT"="WCT", "WCGBTS"="WCGBTS", "West_coast_groundfish_hook_and_line"="WCGHL", "WCGHL"="WCGHL", "GOABTS"="GOABTS", "GOA"="GOABTS", "Gulf_of_Alaska"="GOABTS", "Aleutian_Islands"="AIBTS", "AIBTS"="AIBTS", NA)
   if( is.na(survey) ){
     message("'survey' input didn't match available options, please check help file")
     message("Options include:  'Eastern_Bering_Sea', 'Northern_Bering_Sea', 'Gulf of Alaska', 'Aleutian_Islands', 'West_coast_groundfish_bottom_trawl_survey', 'West_coast_groundfish_hook_and_line'")
@@ -130,49 +130,97 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Data = rename_columns( Downloaded_data[,Vars[which(Vars%in%names(Downloaded_data))]], newname=c("Sci","Year","TowID","Lat","Long","Cell","AreaSept_ha","Wt","Num","Vessel","Proj","Depth_m")[which(Vars%in%names(Downloaded_data))] )
     Data[,'TowID'] = paste0( Data[,'Year'], "_", Data[,'TowID'], "_", Data[,'Cell'] )
   }
-
-  # West Coast groundfish hook and line survey
-  # https://www.nwfsc.noaa.gov/data/
-  if( survey=="WCGHL" ){
-    # Names of pieces
-    # Vars = c("operation_type", "best_available_taxonomy_dim$scientific_name", "date_dim$yyyymmdd", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
-    Vars = c("operation_type", "best_available_taxonomy_dim$genus_70","best_available_taxonomy_dim$species_80", "date_dim$full_date", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
-
-    # Download data
-    Downloaded_data = NULL
-    if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGHL_download.RData")) ){
-      # Download and unzip
-      Url_text = paste0("https://www.nwfsc.noaa.gov/data/api/v1/source/hooknline.catch_hooknline_view/selection.json?variables=",paste0(Vars,collapse=","))
-      message("Downloading all WCGHL catch-rate data from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
-
-
-      Downloaded_data = jsonlite::fromJSON( Url_text )
-
-      Downloaded_data <- remove_header_rows(Downloaded_data)
-
-
-    }
-    # Load if locally available, and save if not
-    Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGHL_download")
-
-    # add scientific name
-    Downloaded_data$scientific_name <-
-      paste(
-        Downloaded_data$`best_available_taxonomy_dim$genus_70`,
-        ifelse(is.na(Downloaded_data$`best_available_taxonomy_dim$species_80`), 'sp.', Downloaded_data$`best_available_taxonomy_dim$species_80`)
-      )
-
-    # Add HaulID
-    WCGHL_data = cbind( Downloaded_data, "TowID"=paste(Downloaded_data[,'date_dim$year'],Downloaded_data[,'site_dim$site_latitude_dd'],Downloaded_data[,'site_dim$site_longitude_dd'],sep="_") )
-
-    # Calculate effort measure
-    WCGHL_data = cbind( WCGHL_data, "soak_time"=WCGHL_data[,'sampling_end_time_dim$military_hour']*60+WCGHL_data[,'sampling_end_time_dim$minute']-(WCGHL_data[,'sampling_start_time_dim$military_hour']*60+WCGHL_data[,'sampling_start_time_dim$minute']))
-    if( !all(is.na(WCGHL_data[,'soak_time']) | WCGHL_data[,'soak_time']<600) ) stop("Check soak_time calculation for possible error")
-
-    # Harmonize column names
-    Data = rename_columns( WCGHL_data[,c("total_catch_wt_kg","total_catch_numbers","date_dim$year","scientific_name","site_dim$site_latitude_dd","site_dim$site_longitude_dd","TowID","soak_time","vessel")], newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Soak_Time_Minutes","Vessel"))
-  }
-
+   
+   
+   # West Coast triennial survey
+   # https://www.nwfsc.noaa.gov/data/
+   if( survey=="WCT" ){
+     # Names of pieces
+     files = seq(1977, 2004, 3)
+     Vars = c("field_identified_taxonomy_dim$scientific_name", "date_dim$year", "trawl_id",
+              "latitude_dd", "longitude_dd", "area_swept_ha_der",
+              "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der",
+              "vessel_id", "project", "actual_station_design_dim$mean_depth_m", "blank")
+     URLbase <- "https://www.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=project=Groundfish%20Triennial%20Shelf%20Survey,performance=Satisfactory,"
+     
+     # Loop through download pieces
+     Downloaded_data = NULL
+     if( is.null(localdir) | !file.exists(paste0(localdir,"/WCT_download.RData")) ){
+       for(i in 1:length(files)){
+         # Download and unzip
+         Url_text = paste0(URLbase,"date_dim$year=",files[i],"&variables=",paste0(Vars,collapse=","))
+         message("Downloading all WCT catch-rate data for ",files[i]," from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
+         Data_tmp = jsonlite::fromJSON( Url_text )
+         
+         Data_tmp <- remove_header_rows(Data_tmp)
+         
+         # Append
+         Downloaded_data = rbind( Downloaded_data, Data_tmp )
+       }
+     }
+     # Load if locally available, and save if not
+     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCT_download")
+     
+     
+     # Convert from KG and Num per Hectare to KG and Num, with hectares as a separate column (not currently working properly because area_swept_ha_der not present)
+     if( "area_swept_ha_der" %in% colnames(Downloaded_data) ){
+       Downloaded_data[c('cpue_kg_per_ha_der','cpue_numbers_per_ha_der')] = Downloaded_data[c('cpue_kg_per_ha_der','cpue_numbers_per_ha_der')] * outer(Downloaded_data[,'area_swept_ha_der'],c(1,1))
+     }else{
+       Downloaded_data = cbind( Downloaded_data, "area_swept_ha_der"=1 )
+     }
+     # setting numbers to NA for now to avoid issue with function that inserts zero values for hauls without observations
+     Downloaded_data[,'cpue_numbers_per_ha_der'] = NA
+     
+     # Harmonize column names
+     Data = rename_columns( Downloaded_data[,Vars[which(Vars%in%names(Downloaded_data))]], newname=c("Sci","Year","TowID","Lat","Long","AreaSept_ha","Wt","Num","Vessel","Proj","Depth_m")[which(Vars%in%names(Downloaded_data))] )
+     #  Data[,'TowID'] = paste0( Data[,'Year'], "_", Data[,'TowID'], "_", Data[,'Cell'] )
+     # using the trawl_id from the raw data which is a unique tow identifier 
+   }
+   
+   
+   # West Coast groundfish hook and line survey
+   # https://www.nwfsc.noaa.gov/data/
+   if( survey=="WCGHL" ){
+     # Names of pieces
+     # Vars = c("operation_type", "best_available_taxonomy_dim$scientific_name", "date_dim$yyyymmdd", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
+     Vars = c("operation_type", "best_available_taxonomy_dim$genus_70","best_available_taxonomy_dim$species_80", "date_dim$full_date", "date_dim$year", "site_dim$site_latitude_dd", "site_dim$site_longitude_dd", "total_catch_wt_kg", "total_catch_numbers", "vessel", "sampling_start_time_dim$military_hour", "sampling_start_time_dim$minute", "sampling_end_time_dim$military_hour", "sampling_end_time_dim$minute" )
+     
+     # Download data
+     Downloaded_data = NULL
+     if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGHL_download.RData")) ){
+       # Download and unzip
+       Url_text = paste0("https://www.nwfsc.noaa.gov/data/api/v1/source/hooknline.catch_hooknline_view/selection.json?variables=",paste0(Vars,collapse=","))
+       message("Downloading all WCGHL catch-rate data from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
+       
+       
+       Downloaded_data = jsonlite::fromJSON( Url_text )
+       
+       Downloaded_data <- remove_header_rows(Downloaded_data)
+       
+       
+     }
+     # Load if locally available, and save if not
+     Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCGHL_download")
+     
+     # add scientific name
+     Downloaded_data$scientific_name <-
+       paste(
+         Downloaded_data$`best_available_taxonomy_dim$genus_70`,
+         ifelse(is.na(Downloaded_data$`best_available_taxonomy_dim$species_80`), 'sp.', Downloaded_data$`best_available_taxonomy_dim$species_80`)
+       )
+     
+     # Add HaulID
+     WCGHL_data = cbind( Downloaded_data, "TowID"=paste(Downloaded_data[,'date_dim$year'],Downloaded_data[,'site_dim$site_latitude_dd'],Downloaded_data[,'site_dim$site_longitude_dd'],sep="_") )
+     
+     # Calculate effort measure
+     WCGHL_data = cbind( WCGHL_data, "soak_time"=WCGHL_data[,'sampling_end_time_dim$military_hour']*60+WCGHL_data[,'sampling_end_time_dim$minute']-(WCGHL_data[,'sampling_start_time_dim$military_hour']*60+WCGHL_data[,'sampling_start_time_dim$minute']))
+     if( !all(is.na(WCGHL_data[,'soak_time']) | WCGHL_data[,'soak_time']<600) ) stop("Check soak_time calculation for possible error")
+     
+     # Harmonize column names
+     Data = rename_columns( WCGHL_data[,c("total_catch_wt_kg","total_catch_numbers","date_dim$year","scientific_name","site_dim$site_latitude_dd","site_dim$site_longitude_dd","TowID","soak_time","vessel")], newname=c("Wt","Num","Year","Sci","Lat","Long","TowID","Soak_Time_Minutes","Vessel"))
+   }
+   
+   
   # Eastern Bering Sea
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="EBSBTS" ){
@@ -209,7 +257,8 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
-
+   
+   
   # Northern Bering Sea
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="NBSBTS" ){
@@ -325,7 +374,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   ######################
 
   # Add zeros
-  if( add_zeros==TRUE & survey%in%c("WCGBTS","WCGHL","EBSBTS","GOABTS","AIBTS","NBSBTS") ){
+  if( add_zeros==TRUE & survey%in%c("WCGBTS","WCT","WCGHL","EBSBTS","GOABTS","AIBTS","NBSBTS") ){
     message( "Adding missing zeros")
     if( measurement_type=="biomass" ){
       DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
