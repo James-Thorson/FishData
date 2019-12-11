@@ -66,22 +66,18 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     return(DF_new)
   }
 
-   remove_header_rows <- function(Data_tmp){
+  remove_header_rows <- function(Data_tmp){
+    year_column = which(grepl("year", tolower(colnames(Data_tmp)))) # year column is not always called YEAR
 
-     year_column = which(grepl("year", tolower(colnames(Data_tmp)))) # year column is not always called YEAR
-
-     if (any(Data_tmp[, year_column] == "YEAR" &
-             is.na(Data_tmp[, year_column]) == F)) {
-    Which2Remove = which( Data_tmp[, year_column]=="YEAR" )
-    Data_tmp = Data_tmp[-Which2Remove,]
-    utils::write.csv( Data_tmp, file=paste0(tempdir(),"rewrite_data",files[i],".csv"), row.names=FALSE )
-    Data_tmp = utils::read.csv( paste0(tempdir(),"rewrite_data",files[i],".csv"))
-    } else{
-
+    if (any(Data_tmp[, year_column] == "YEAR" & is.na(Data_tmp[, year_column]) == F)) {
+      Which2Remove = which( Data_tmp[, year_column]=="YEAR" )
+      Data_tmp = Data_tmp[-Which2Remove,]
+      utils::write.csv( Data_tmp, file=paste0(tempdir(),"rewrite_data",files[i],".csv"), row.names=FALSE )
+      Data_tmp = utils::read.csv( paste0(tempdir(),"rewrite_data",files[i],".csv"))
+    }else{
       Data_tmp = Data_tmp
-
     }
-   }
+  }
 
   ########################
   # Obtain data
@@ -91,7 +87,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # https://www.nwfsc.noaa.gov/data/
   if( survey=="WCGBTS" ){
     # Names of pieces
-    files = 2003:2018
+    files = 2003:2019
     Vars = c("field_identified_taxonomy_dim$scientific_name", "date_dim$year", "tow",
       "latitude_dd", "longitude_dd", "centroid_id", "area_swept_ha_der",
       "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der",
@@ -127,7 +123,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Downloaded_data[,'cpue_numbers_per_ha_der'] = NA
     
     # Harmonize column names
-    Data = rename_columns( Downloaded_data[,Vars[which(Vars%in%names(Downloaded_data))]], newname=c("Sci","Year","TowID","Lat","Long","Cell","AreaSept_ha","Wt","Num","Vessel","Proj","Depth_m")[which(Vars%in%names(Downloaded_data))] )
+    Data = rename_columns( Downloaded_data[,Vars[which(Vars%in%names(Downloaded_data))]], newname=c("Sci","Year","TowID","Lat","Long","Cell","AreaSwept_ha","Wt","Num","Vessel","Proj","Depth_m")[which(Vars%in%names(Downloaded_data))] )
     Data[,'TowID'] = paste0( Data[,'Year'], "_", Data[,'TowID'], "_", Data[,'Cell'] )
   }
    
@@ -172,7 +168,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
      Downloaded_data[,'cpue_numbers_per_ha_der'] = NA
      
      # Harmonize column names
-     Data = rename_columns( Downloaded_data[,Vars[which(Vars%in%names(Downloaded_data))]], newname=c("Sci","Year","TowID","Lat","Long","AreaSept_ha","Wt","Num","Vessel","Proj","Depth_m")[which(Vars%in%names(Downloaded_data))] )
+     Data = rename_columns( Downloaded_data[,Vars[which(Vars%in%names(Downloaded_data))]], newname=c("Sci","Year","TowID","Lat","Long","AreaSwept_ha","Wt","Num","Vessel","Proj","Depth_m")[which(Vars%in%names(Downloaded_data))] )
      #  Data[,'TowID'] = paste0( Data[,'Year'], "_", Data[,'TowID'], "_", Data[,'Cell'] )
      # using the trawl_id from the raw data which is a unique tow identifier 
    }
@@ -254,6 +250,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
     # Harmonize column names
     Data = rename_columns( Data[,c('SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num') )
+    Data = data.frame( Data, "AreaSwept_ha"=1 )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
@@ -292,6 +289,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
     # Harmonize column names
     Data = rename_columns( Data[,c('SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num') )
+    Data = data.frame( Data, "AreaSwept_ha"=1 )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
@@ -323,6 +321,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
     # Harmonize column names
     Data = rename_columns( Data[,c('SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num') )
+    Data = data.frame( Data, "AreaSwept_ha"=1 )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
@@ -332,7 +331,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="AIBTS" ){
     # Names of pieces
-    files = c("1983_2000","2002_2012","2014_2016")
+    files = c("1983_2000","2002_2012","2014_2018")
 
     # Loop through download pieces
     Downloaded_data = NULL
@@ -357,6 +356,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
     # Harmonize column names
     Data = rename_columns( Data[,c('SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num') )
+    Data = data.frame( Data, "AreaSwept_ha"=1 )
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
@@ -378,11 +378,11 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     message( "Adding missing zeros")
     if( measurement_type=="biomass" ){
       DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
-      DF = DF[,c("Sci","Year","TowID","Lat","Long","Wt")]
+      DF = DF[,c("Sci","Year","TowID","Lat","Long","Wt","AreaSwept_ha")]
     }
     if( measurement_type=="numbers" ){
       DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Num", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
-      DF = DF[,c("Sci","Year","TowID","Lat","Long","Num")]
+      DF = DF[,c("Sci","Year","TowID","Lat","Long","Num","AreaSwept_ha")]
     }
   }else{  # FishData::
     message( "Not adding missing zeros")
