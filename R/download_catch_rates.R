@@ -28,7 +28,11 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   ########################
 
   # Match survey
-  survey = switch( survey, "Eastern_Bering_Sea"="EBSBTS", "EBS"="EBSBTS", "EBSBTS"="EBSBTS", "Northern_Bering_Sea"="NBSBTS", "NBS"="NBSBTS", "West_coast_groundfish_bottom_trawl_survey"="WCGBTS","West_coast_triennial"="WCT","WCT"="WCT", "WCGBTS"="WCGBTS", "West_coast_groundfish_hook_and_line"="WCGHL", "WCGHL"="WCGHL", "GOABTS"="GOABTS", "GOA"="GOABTS", "Gulf_of_Alaska"="GOABTS", "Aleutian_Islands"="AIBTS", "AIBTS"="AIBTS", NA)
+  survey = switch( survey, "Eastern_Bering_Sea"="EBSBTS", "EBS"="EBSBTS", "EBSBTS"="EBSBTS",
+    "Northern_Bering_Sea"="NBSBTS", "NBS"="NBSBTS", "West_coast_groundfish_bottom_trawl_survey"="WCGBTS",
+    "West_coast_triennial"="WCT","WCT"="WCT", "WCGBTS"="WCGBTS", "West_coast_groundfish_hook_and_line"="WCGHL",
+    "WCGHL"="WCGHL", "GOABTS"="GOABTS", "GOA"="GOABTS", "Gulf_of_Alaska"="GOABTS", "Aleutian_Islands"="AIBTS",
+    "AIBTS"="AIBTS", "Bering_Sea_slope"="BSslope", NA)
   if( is.na(survey) ){
     message("'survey' input didn't match available options, please check help file")
     message("Options include:  'Eastern_Bering_Sea', 'Northern_Bering_Sea', 'Gulf of Alaska', 'Aleutian_Islands', 'West_coast_groundfish_bottom_trawl_survey', 'West_coast_groundfish_hook_and_line'")
@@ -255,7 +259,44 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
    
-   
+  # Bering Sea slope
+  # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
+  if( survey=="BSslope" ){
+    # Names of pieces
+    files = c("2002_2016")
+
+    # Loop through download pieces
+    Downloaded_data = NULL
+    if( is.null(localdir) | !file.exists(paste0(localdir,"/BSslope_download.RData")) ){
+      for(i in 1:length(files)){
+        # Download and unzip
+        Tempdir = paste0( tempdir(), "/" )
+        dir.create(Tempdir)
+        temp = tempfile(pattern="file_", tmpdir=Tempdir, fileext=".zip")
+        utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/bsslope",files[i],".zip"), temp)
+        Data_tmp = utils::read.csv( unz(temp, paste0("bsslope",files[i],".csv")) )
+        unlink(temp)
+
+        # Remove any row that repeats column headers again
+
+        Data_tmp <- remove_header_rows(Data_tmp)
+
+        # Append
+        Downloaded_data = rbind( Downloaded_data, Data_tmp )
+      }
+    }
+    # Load if locally available, and save if not
+    Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="BSslope_download")
+
+    # Add TowID
+    Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'YEAR'],"_",Downloaded_data[,'STATION'],"_",Downloaded_data[,'HAUL']) )
+    # Harmonize column names
+    Data = rename_columns( Data[,c('SCIENTIFIC','YEAR','TowID','LATITUDE','LONGITUDE','WTCPUE','NUMCPUE')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num') )
+    Data = data.frame( Data, "AreaSwept_ha"=1 )
+    # Exclude missing species
+    Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
+  }
+
   # Northern Bering Sea
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="NBSBTS" ){
@@ -374,7 +415,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   ######################
 
   # Add zeros
-  if( add_zeros==TRUE & survey%in%c("WCGBTS","WCT","WCGHL","EBSBTS","GOABTS","AIBTS","NBSBTS") ){
+  if( add_zeros==TRUE & survey%in%c("WCGBTS","WCT","WCGHL","EBSBTS","GOABTS","AIBTS","NBSBTS","BSslope") ){
     message( "Adding missing zeros")
     if( measurement_type=="biomass" ){
       DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
