@@ -28,14 +28,18 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   ########################
 
   # Match survey
-  survey = switch( survey, "Eastern_Bering_Sea"="EBSBTS", "EBS"="EBSBTS", "EBSBTS"="EBSBTS",
+  survey = switch( survey, "Vancouver_Island"="WCVI",
+                   "Haida_Gwaii"="WCHG",
+                   "Queen_Charlotte_Sound"="QCS",
+                   "Hecate_Strait"="HS",
+                   "Eastern_Bering_Sea"="EBSBTS", "EBS"="EBSBTS", "EBSBTS"="EBSBTS",
     "Northern_Bering_Sea"="NBSBTS", "NBS"="NBSBTS", "West_coast_groundfish_bottom_trawl_survey"="WCGBTS",
     "West_coast_triennial"="WCT","WCT"="WCT", "WCGBTS"="WCGBTS", "West_coast_groundfish_hook_and_line"="WCGHL",
     "WCGHL"="WCGHL", "GOABTS"="GOABTS", "GOA"="GOABTS", "Gulf_of_Alaska"="GOABTS", "Aleutian_Islands"="AIBTS",
     "AIBTS"="AIBTS", "Bering_Sea_slope"="BSslope", NA)
   if( is.na(survey) ){
     message("'survey' input didn't match available options, please check help file")
-    message("Options include:  'Eastern_Bering_Sea', 'Northern_Bering_Sea', 'Gulf of Alaska', 'Aleutian_Islands', 'West_coast_groundfish_bottom_trawl_survey', 'West_coast_groundfish_hook_and_line'")
+    message("Options include:  'Eastern_Bering_Sea', 'Northern_Bering_Sea', 'Gulf of Alaska', 'Aleutian_Islands', 'West_coast_groundfish_bottom_trawl_survey', 'West_coast_groundfish_hook_and_line','West_coast_triennial','Vancouver_Island','Haida_Gwaii','Queen_Charlotte_Sound','Hecate_Strait'")
     return( invisible(NULL) )
   }else{
     message("Obtaining data for ",survey," survey...")
@@ -296,7 +300,8 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
-
+  
+ 
   # Northern Bering Sea
   # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="NBSBTS" ){
@@ -401,7 +406,208 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
     # Exclude missing species
     Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
   }
-
+  
+  # British Columbia - West Coast Vancouver Island
+  if( survey=="WCVI" ){
+    
+    # Loop through download pieces
+    Downloaded_data = NULL
+    if( is.null(localdir) | !file.exists(paste0(localdir,"/WCVI_download.RData")) ){
+      # Download and unzip
+      Tempdir = paste0( tempdir(), "/" )
+      dir.create(Tempdir)
+      temp = tempfile(pattern="file_", tmpdir=Tempdir, fileext=".zip")
+      utils::download.file(paste0("https://pacgis01.dfo-mpo.gc.ca/FGPPublic/Groundfish_Synoptic_Trawl_Surveys/West_Coast_VI/english.zip"), temp)
+      Data_tmp = utils::read.csv( unz(temp,"english/WCVI-catch-pac-dfo-mpo-science-eng.csv"), stringsAsFactors = F)
+      # get extra dataset for lat/lon of tows
+      Data_tmp2 = utils::read.csv( unz(temp,"english/WCVI-effort-pac-dfo-mpo-science-eng.csv"), stringsAsFactors = F)
+      
+      unlink(temp)
+      
+      # merge two datasets
+      Data_tmp <- merge(Data_tmp, Data_tmp2, by=c("Survey.Year","Trip.identifier","Set.number"), all.x=TRUE)
+      
+      # Remove any row that repeats column headers again
+      
+      Data_tmp <- remove_header_rows(Data_tmp)
+      
+      # Append
+      Downloaded_data = rbind( Downloaded_data, Data_tmp )
+    }
+    
+    # Load if locally available, and save if not
+    Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCVI_download")
+    
+    # Add TowID
+    Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'Survey.Year'],"_",Downloaded_data[,'Trip.identifier'],"_",Downloaded_data[,'Set.number']) )
+    
+    # Average start/end lat and lon
+    Data$Lat = (Data$Start.latitude+Data$End.latitude)/2
+    Data$Long = (Data$Start.longitude+Data$End.longitude)/2
+    
+    # Calculate area swept, in ha
+    Data$AreaSwept_ha = (Data$Distance.towed..m.)*(Data$Trawl.door.spread..m.)/10000
+    
+    # Harmonize column names
+    Data = rename_columns( Data[,c('Scientific.name','Survey.Year','TowID','Lat','Long','Catch.weight..kg.','Catch.count..pieces.','AreaSwept_ha')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num','AreaSwept_ha') )
+    #  Data = data.frame( Data, "AreaSwept_ha"=1 )
+    Data$Sci <- tolower(Data$Sci)
+    
+    # Exclude missing species
+    Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
+  }
+  
+  
+  # British Columbia - West Coast Haida Gwaii
+  if( survey=="WCHG" ){
+    
+    # Loop through download pieces
+    Downloaded_data = NULL
+    if( is.null(localdir) | !file.exists(paste0(localdir,"/WCHG_download.RData")) ){
+      # Download and unzip
+      Tempdir = paste0( tempdir(), "/" )
+      dir.create(Tempdir)
+      temp = tempfile(pattern="file_", tmpdir=Tempdir, fileext=".zip")
+      utils::download.file(paste0("https://pacgis01.dfo-mpo.gc.ca/FGPPublic/Groundfish_Synoptic_Trawl_Surveys/West_Coast_HG/english.zip"), temp)
+      Data_tmp = utils::read.csv( unz(temp,"english/WCHG-catch-pac-dfo-mpo-science-eng.csv"), stringsAsFactors = F)
+      # get extra dataset for lat/lon of tows
+      Data_tmp2 = utils::read.csv( unz(temp,"english/WCHG-effort-pac-dfo-mpo-science-eng.csv"), stringsAsFactors = F)
+      
+      unlink(temp)
+      
+      # merge two datasets
+      Data_tmp <- merge(Data_tmp, Data_tmp2, by=c("Survey.Year","Trip.identifier","Set.number"), all.x=TRUE)
+      
+      # Remove any row that repeats column headers again
+      
+      Data_tmp <- remove_header_rows(Data_tmp)
+      
+      # Append
+      Downloaded_data = rbind( Downloaded_data, Data_tmp )
+    }
+    
+    # Load if locally available, and save if not
+    Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="WCVI_download")
+    
+    # Add TowID
+    Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'Survey.Year'],"_",Downloaded_data[,'Trip.identifier'],"_",Downloaded_data[,'Set.number']) )
+    
+    # Average start/end lat and lon
+    Data$Lat = (Data$Start.latitude+Data$End.latitude)/2
+    Data$Long = (Data$Start.longitude+Data$End.longitude)/2
+    
+    # Calculate area swept, in ha
+    Data$AreaSwept_ha = (Data$Distance.towed..m.)*(Data$Trawl.door.spread..m.)/10000
+    
+    # Harmonize column names
+    Data = rename_columns( Data[,c('Scientific.name','Survey.Year','TowID','Lat','Long','Catch.weight..kg.','Catch.count..pieces.','AreaSwept_ha')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num','AreaSwept_ha') )
+    #  Data = data.frame( Data, "AreaSwept_ha"=1 )
+    Data$Sci <- tolower(Data$Sci)
+    
+    # Exclude missing species
+    Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
+  }
+  
+  # British Columbia - Queen Charlotte Sound
+  if( survey=="QCS" ){
+    
+    # Loop through download pieces
+    Downloaded_data = NULL
+    if( is.null(localdir) | !file.exists(paste0(localdir,"/QCS_download.RData")) ){
+      # Download and unzip
+      Tempdir = paste0( tempdir(), "/" )
+      dir.create(Tempdir)
+      temp = tempfile(pattern="file_", tmpdir=Tempdir, fileext=".zip")
+      utils::download.file(paste0("https://pacgis01.dfo-mpo.gc.ca/FGPPublic/Groundfish_Synoptic_Trawl_Surveys/Queen_Charlotte_Sound/english.zip"), temp)
+      Data_tmp = utils::read.csv( unz(temp,"english/QCS-catch-pac-dfo-mpo-science-eng.csv"), stringsAsFactors = F)
+      # get extra dataset for lat/lon of tows
+      Data_tmp2 = utils::read.csv( unz(temp,"english/QCS-effort-pac-dfo-mpo-science-eng.csv"), stringsAsFactors = F)
+      
+      unlink(temp)
+      
+      # merge two datasets
+      Data_tmp <- merge(Data_tmp, Data_tmp2, by=c("Survey.Year","Trip.identifier","Set.number"), all.x=TRUE)
+      
+      # Remove any row that repeats column headers again
+      
+      Data_tmp <- remove_header_rows(Data_tmp)
+      
+      # Append
+      Downloaded_data = rbind( Downloaded_data, Data_tmp )
+    }
+    
+    # Load if locally available, and save if not
+    Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="QCS_download")
+    
+    # Add TowID
+    Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'Survey.Year'],"_",Downloaded_data[,'Trip.identifier'],"_",Downloaded_data[,'Set.number']) )
+    
+    # Average start/end lat and lon
+    Data$Lat = (Data$Start.latitude+Data$End.latitude)/2
+    Data$Long = (Data$Start.longitude+Data$End.longitude)/2
+    
+    # Calculate area swept, in ha
+    Data$AreaSwept_ha = (Data$Distance.towed..m.)*(Data$Trawl.door.spread..m.)/10000
+    
+    # Harmonize column names
+    Data = rename_columns( Data[,c('Scientific.name','Survey.Year','TowID','Lat','Long','Catch.weight..kg.','Catch.count..pieces.','AreaSwept_ha')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num','AreaSwept_ha') )
+    #  Data = data.frame( Data, "AreaSwept_ha"=1 )
+    Data$Sci <- tolower(Data$Sci)
+    
+    # Exclude missing species
+    Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
+  }
+  
+  # British Columbia - Hecate Strait
+  if( survey=="HS" ){
+    
+    # Loop through download pieces
+    Downloaded_data = NULL
+    if( is.null(localdir) | !file.exists(paste0(localdir,"/HS_download.RData")) ){
+      # Download and unzip
+      Tempdir = paste0( tempdir(), "/" )
+      dir.create(Tempdir)
+      temp = tempfile(pattern="file_", tmpdir=Tempdir, fileext=".zip")
+      utils::download.file(paste0("https://pacgis01.dfo-mpo.gc.ca/FGPPublic/Groundfish_Synoptic_Trawl_Surveys/Hecate_Strait/english.zip"), temp)
+      Data_tmp = utils::read.csv( unz(temp,"english/HS-catch-pac-dfo-mpo-science-eng.csv"), stringsAsFactors = F)
+      # get extra dataset for lat/lon of tows
+      Data_tmp2 = utils::read.csv( unz(temp,"english/HS-effort-pac-dfo-mpo-science-eng.csv"), stringsAsFactors = F)
+      
+      unlink(temp)
+      
+      # merge two datasets
+      Data_tmp <- merge(Data_tmp, Data_tmp2, by=c("Survey.Year","Trip.identifier","Set.number"), all.x=TRUE)
+      
+      # Remove any row that repeats column headers again
+      
+      Data_tmp <- remove_header_rows(Data_tmp)
+      
+      # Append
+      Downloaded_data = rbind( Downloaded_data, Data_tmp )
+    }
+    
+    # Load if locally available, and save if not
+    Downloaded_data = load_or_save( Downloaded_data=Downloaded_data, localdir=localdir, name="HS_download")
+    
+    # Add TowID
+    Data = cbind( Downloaded_data, "TowID"=paste0(Downloaded_data[,'Survey.Year'],"_",Downloaded_data[,'Trip.identifier'],"_",Downloaded_data[,'Set.number']) )
+    
+    # Average start/end lat and lon
+    Data$Lat = (Data$Start.latitude+Data$End.latitude)/2
+    Data$Long = (Data$Start.longitude+Data$End.longitude)/2
+    
+    # Calculate area swept, in ha
+    Data$AreaSwept_ha = (Data$Distance.towed..m.)*(Data$Trawl.door.spread..m.)/10000
+    
+    # Harmonize column names
+    Data = rename_columns( Data[,c('Scientific.name','Survey.Year','TowID','Lat','Long','Catch.weight..kg.','Catch.count..pieces.','AreaSwept_ha')], newname=c('Sci','Year','TowID','Lat','Long','Wt','Num','AreaSwept_ha') )
+    #  Data = data.frame( Data, "AreaSwept_ha"=1 )
+    Data$Sci <- tolower(Data$Sci)
+    
+    # Exclude missing species
+    Data = Data[ which(!Data[,'Sci']%in%c(""," ")), ]
+  }
+  
   ########################
   # Determine species_set
   ########################
@@ -415,7 +621,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   ######################
 
   # Add zeros
-  if( add_zeros==TRUE & survey%in%c("WCGBTS","WCT","WCGHL","EBSBTS","GOABTS","AIBTS","NBSBTS","BSslope") ){
+  if( add_zeros==TRUE & survey%in%c("WCGBTS","WCT","WCGHL","EBSBTS","GOABTS","AIBTS","NBSBTS","BSslope","WCVI","WCHG","QCS") ){
     message( "Adding missing zeros")
     if( measurement_type=="biomass" ){
       DF = add_missing_zeros( data_frame=Data, unique_sample_ID_colname="TowID", sample_colname="Wt", species_subset=species_set, species_colname="Sci", Method="Fast", if_multiple_records="Combine", error_tol=error_tol)
