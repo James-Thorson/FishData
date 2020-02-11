@@ -95,7 +95,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   # https://www.nwfsc.noaa.gov/data/
   if( survey=="WCGBTS" ){
     # Names of pieces
-    files = 2003:2019
+    files = 2003:2018
     Vars = c("field_identified_taxonomy_dim$scientific_name", "date_dim$year", "tow",
       "latitude_dd", "longitude_dd", "centroid_id", "area_swept_ha_der",
       "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der",
