@@ -21,6 +21,8 @@
 #'   \item{...}{Potentially other column labels}
 #' }
 
+# Test Aurore
+
 #' @export
 download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, species_set=10, error_tol=1e-12, localdir=NULL, measurement_type="biomass" ){
   ########################
