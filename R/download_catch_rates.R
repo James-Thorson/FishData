@@ -100,7 +100,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
       "latitude_dd", "longitude_dd", "centroid_id", "area_swept_ha_der",
       "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der",
       "vessel_id", "project", "actual_station_design_dim$mean_depth_m", "blank")
-    URLbase <- "https://www.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=project=Groundfish%20Slope%20and%20Shelf%20Combination%20Survey,performance=Satisfactory,"
+    URLbase <- "https://www.webapps.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=project=Groundfish%20Slope%20and%20Shelf%20Combination%20Survey,performance=Satisfactory,"
 
     # Loop through download pieces
     Downloaded_data = NULL
@@ -108,7 +108,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
       for(i in 1:length(files)){
         # Download and unzip
         Url_text = paste0(URLbase,"date_dim$year=",files[i],"&variables=",paste0(Vars,collapse=","))
-        message("Downloading all WCGBTS catch-rate data for ",files[i]," from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
+        message("Downloading all WCGBTS catch-rate data for ",files[i]," from NWFSC database:  https://www.webapps.nwfsc.noaa.gov/data/")
         Data_tmp = jsonlite::fromJSON( Url_text )
 
         Data_tmp <- remove_header_rows(Data_tmp)
@@ -145,7 +145,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
               "latitude_dd", "longitude_dd", "area_swept_ha_der",
               "cpue_kg_per_ha_der", "cpue_numbers_per_ha_der",
               "vessel_id", "project", "actual_station_design_dim$mean_depth_m", "blank")
-     URLbase <- "https://www.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=project=Groundfish%20Triennial%20Shelf%20Survey,performance=Satisfactory,"
+     URLbase <- "https://www.webapps.nwfsc.noaa.gov/data/api/v1/source/trawl.catch_fact/selection.json?filters=project=Groundfish%20Triennial%20Shelf%20Survey,performance=Satisfactory,"
      
      # Loop through download pieces
      Downloaded_data = NULL
@@ -153,7 +153,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
        for(i in 1:length(files)){
          # Download and unzip
          Url_text = paste0(URLbase,"date_dim$year=",files[i],"&variables=",paste0(Vars,collapse=","))
-         message("Downloading all WCT catch-rate data for ",files[i]," from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
+         message("Downloading all WCT catch-rate data for ",files[i]," from NWFSC database:  https://www.webapps.nwfsc.noaa.gov/data/")
          Data_tmp = jsonlite::fromJSON( Url_text )
          
          Data_tmp <- remove_header_rows(Data_tmp)
@@ -193,8 +193,8 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
      Downloaded_data = NULL
      if( is.null(localdir) | !file.exists(paste0(localdir,"/WCGHL_download.RData")) ){
        # Download and unzip
-       Url_text = paste0("https://www.nwfsc.noaa.gov/data/api/v1/source/hooknline.catch_hooknline_view/selection.json?variables=",paste0(Vars,collapse=","))
-       message("Downloading all WCGHL catch-rate data from NWFSC database:  https://www.nwfsc.noaa.gov/data/")
+       Url_text = paste0("https://www.webapps.nwfsc.noaa.gov/data/api/v1/source/hooknline.catch_hooknline_view/selection.json?variables=",paste0(Vars,collapse=","))
+       message("Downloading all WCGHL catch-rate data from NWFSC database:  https://www.webapps.nwfsc.noaa.gov/data/")
        
        
        Downloaded_data = jsonlite::fromJSON( Url_text )
