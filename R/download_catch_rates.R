@@ -226,10 +226,10 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
    
    
   # Eastern Bering Sea
-  # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
+  # https://apps-afsc.fisheries.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="EBSBTS" ){
     # Names of pieces
-    files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2016","2017_2018")
+    files = c("1982_1984","1985_1989","1990_1994","1995_1999","2000_2004","2005_2008","2009_2012","2013_2016","2017_2019")
 
     # Loop through download pieces
     Downloaded_data = NULL
@@ -239,7 +239,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
         Tempdir = paste0( tempdir(), "/" )
         dir.create(Tempdir)
         temp = tempfile(pattern="file_", tmpdir=Tempdir, fileext=".zip")
-        utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ebs",files[i],".zip"), temp)
+        utils::download.file(paste0("https://apps-afsc.fisheries.noaa.gov/RACE/groundfish/survey_data/downloads/ebs",files[i],".zip"), temp)
         Data_tmp = utils::read.csv( unz(temp, paste0("ebs",files[i],".csv")) )
         unlink(temp)
 
@@ -264,7 +264,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   }
    
   # Bering Sea slope
-  # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
+  # https://apps-afsc.fisheries.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="BSslope" ){
     # Names of pieces
     files = c("2002_2016")
@@ -277,7 +277,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
         Tempdir = paste0( tempdir(), "/" )
         dir.create(Tempdir)
         temp = tempfile(pattern="file_", tmpdir=Tempdir, fileext=".zip")
-        utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/bsslope",files[i],".zip"), temp)
+        utils::download.file(paste0("https://apps-afsc.fisheries.noaa.gov/RACE/groundfish/survey_data/downloads/bsslope",files[i],".zip"), temp)
         Data_tmp = utils::read.csv( unz(temp, paste0("bsslope",files[i],".csv")) )
         unlink(temp)
 
@@ -303,10 +303,10 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   
  
   # Northern Bering Sea
-  # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
+  # https://apps-afsc.fisheries.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="NBSBTS" ){
     # Names of pieces
-    files = c("1982_2018")
+    files = c("1982_2019")
 
     # Loop through download pieces
     Downloaded_data = NULL
@@ -316,7 +316,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
         Tempdir = paste0( tempdir(), "/" )
         dir.create(Tempdir)
         temp = tempfile(pattern="file_", tmpdir=Tempdir, fileext=".zip")
-        utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/nbs",files[i],".zip"), temp)
+        utils::download.file(paste0("https://apps-afsc.fisheries.noaa.gov/RACE/groundfish/survey_data/downloads/nbs",files[i],".zip"), temp)
         Data_tmp = utils::read.csv( unz(temp, paste0("nbs",files[i],".csv")) )
         unlink(temp)
 
@@ -341,17 +341,17 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
   }
 
   # Gulf of Alaska
-  # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
+  # https://apps-afsc.fisheries.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="GOABTS" ){
     # Names of pieces
-    files = c("1984_1987","1990_1999","2001_2005","2007_2013","2015_2017")
+    files = c("1984_1987","1990_1999","2001_2005","2007_2013","2015_2019")
     # Loop through download pieces
     Downloaded_data = NULL
     if( is.null(localdir) | !file.exists(paste0(localdir,"/GOA_download.RData")) ){
       for(i in 1:length(files)){
         # Download and unzip
         temp = tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
-        utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/goa",files[i],".zip"),temp)
+        utils::download.file(paste0("https://apps-afsc.fisheries.noaa.gov/RACE/groundfish/survey_data/downloads/goa",files[i],".zip"),temp)
         Data_tmp = utils::read.csv( unz(temp, paste0("goa",files[i],".csv")), stringsAsFactors = F)
         unlink(temp)
         # Remove any row that repeats column headers again
@@ -374,7 +374,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
 
 
   # Aleutian Islands
-  # http://www.afsc.noaa.gov/RACE/groundfish/survey_data/data.htm
+  # https://apps-afsc.fisheries.noaa.gov/RACE/groundfish/survey_data/data.htm
   if( survey=="AIBTS" ){
     # Names of pieces
     files = c("1983_2000","2002_2012","2014_2018")
@@ -385,7 +385,7 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
       for(i in 1:length(files)){
         # Download and unzip
         temp = tempfile(pattern="file_", tmpdir=tempdir(), fileext=".zip")
-        utils::download.file(paste0("http://www.afsc.noaa.gov/RACE/groundfish/survey_data/downloads/ai",files[i],".zip"),temp)
+        utils::download.file(paste0("https://apps-afsc.fisheries.noaa.gov/RACE/groundfish/survey_data/downloads/ai",files[i],".zip"),temp)
         Data_tmp = utils::read.csv( unz(temp, paste0("ai",files[i],".csv")) )
         unlink(temp)
 
