@@ -32,11 +32,23 @@ download_catch_rates = function( survey="Eastern_Bering_Sea", add_zeros=TRUE, sp
                    "Haida_Gwaii"="WCHG",
                    "Queen_Charlotte_Sound"="QCS",
                    "Hecate_Strait"="HS",
-                   "Eastern_Bering_Sea"="EBSBTS", "EBS"="EBSBTS", "EBSBTS"="EBSBTS",
-    "Northern_Bering_Sea"="NBSBTS", "NBS"="NBSBTS", "West_coast_groundfish_bottom_trawl_survey"="WCGBTS",
-    "West_coast_triennial"="WCT","WCT"="WCT", "WCGBTS"="WCGBTS", "West_coast_groundfish_hook_and_line"="WCGHL",
-    "WCGHL"="WCGHL", "GOABTS"="GOABTS", "GOA"="GOABTS", "Gulf_of_Alaska"="GOABTS", "Aleutian_Islands"="AIBTS",
-    "AIBTS"="AIBTS", "Bering_Sea_slope"="BSslope", NA)
+                   "Eastern_Bering_Sea"="EBSBTS",
+                   "EBS"="EBSBTS",
+                   "EBSBTS"="EBSBTS",
+                   "Northern_Bering_Sea"="NBSBTS",
+                   "NBS"="NBSBTS",
+                   "West_coast_groundfish_bottom_trawl_survey"="WCGBTS",
+                   "West_coast_triennial"="WCT",
+                   "WCT"="WCT", "WCGBTS"="WCGBTS",
+                   "West_coast_groundfish_hook_and_line"="WCGHL",
+                   "WCGHL"="WCGHL",
+                   "GOABTS"="GOABTS",
+                   "GOA"="GOABTS",
+                   "Gulf_of_Alaska"="GOABTS",
+                   "Aleutian_Islands"="AIBTS",
+                   "AIBTS"="AIBTS",
+                   "Bering_Sea_slope"="BSslope",
+                   NA)
   if( is.na(survey) ){
     message("'survey' input didn't match available options, please check help file")
     message("Options include:  'Eastern_Bering_Sea', 'Northern_Bering_Sea', 'Gulf of Alaska', 'Aleutian_Islands', 'West_coast_groundfish_bottom_trawl_survey', 'West_coast_groundfish_hook_and_line','West_coast_triennial','Vancouver_Island','Haida_Gwaii','Queen_Charlotte_Sound','Hecate_Strait'")
